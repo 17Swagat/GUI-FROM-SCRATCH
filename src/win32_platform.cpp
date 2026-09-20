@@ -133,9 +133,15 @@ void win32_DrawText(
     DeleteDC(hdc);
 }
 
+void win32_closeApp(void* handleWindow){
+    DestroyWindow((HWND)handleWindow);
+}
+
+
 void PLATFORM_IMPL_DrawText(const char* text, int x, int y, int width, int height){
     win32_DrawText(text, x, y, width, height);
 }
+
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -146,6 +152,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UIMouseState.LClick = true;
             global_UIMouseState.LClick_x = GET_X_LPARAM(lParam);
             global_UIMouseState.LClick_y = GET_Y_LPARAM(lParam);
+
+            // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
+            // Right now I know UPTO where the the TopBar() is..
+            // [Checking]: Click On The TopBar
+            if (
+                // x:
+                (global_UIMouseState.LClick_x >= 0) &&
+                (global_UIMouseState.LClick_x <= global_UIBackBuffer.width- 50) && // - 50, because of the width occupied by the close [X] button
+                // y:
+                (global_UIMouseState.LClick_y >= 0) && 
+                (global_UIMouseState.LClick_y <= 50)  // 50: TopBar() Height
+            ){
+                ReleaseCapture();
+                SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+            }
+            
             return 0;
         }
 
@@ -199,6 +221,11 @@ i32 func_colorChange(){
     return color;
 }
 
+void func_moveAppOnTabBarClick(void* hwnd){
+    ReleaseCapture();
+    SendMessage((HWND) hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     // Register the window class.
@@ -206,6 +233,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = "Learn DirectX11 Window Class";
+    wc.hCursor = LoadCursorA(NULL, IDC_ARROW);
     RegisterClassA(&wc);
 
     // Drawing Area:
@@ -230,7 +258,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     win32_create_backbuffer(clientAreaWidth, clientAreaHeight, &global_UIBackBuffer);
 
     // Making window Non-Resizable.
-    DWORD windowStyle = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX); 
+    DWORD windowStyle = (
+        WS_OVERLAPPED | WS_POPUP 
+        // |  WS_MINIMIZEBOX |  WS_CAPTION | WS_SYSMENU 
+    ); 
     HWND hwnd = CreateWindowA(
         wc.lpszClassName, // Window class
         "UI From Scratch",          // Window text
@@ -329,12 +360,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         // [[ Render ]]:
         UI_FillBackground(&global_UIBackBuffer, bgColor);
-        UI_TabBar();
-        // UI_Button(20, 20, 100, 40, NULL);
+        UI_TabBar(win32_closeApp,(void*) hwnd, func_moveAppOnTabBarClick);
+        
         UI_Button(50, 300, 200, 40, NULL);
-        UI_Button(100, 400, 200, 200, func_colorChange);
+        UI_Button(100, 100, 100, 100, func_colorChange);
 
-        // gameStateUpdate(&globalGameBackBuffer, deltaTime, false);
 
         // [[ PRESENT ]]:
         win32_DisplayUIBackBuffer(hwnd);
