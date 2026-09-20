@@ -12,6 +12,9 @@ struct UI_MouseState {
     bool RClick = false;
     int LClick_x = -1; 
     int LClick_y = -1; 
+
+    // CLOSE [X] Btn:
+    bool CLOSEBTN_CLICK = false;
 };
 
 UI_BackBuffer global_UIBackBuffer;
@@ -68,7 +71,7 @@ void UI_TabBar(
     if (global_UIMouseState.LClick) {
            if (
                (global_UIMouseState.LClick_x >= 0) && 
-               (global_UIMouseState.LClick_x <= global_UIBackBuffer.width) &&
+               (global_UIMouseState.LClick_x <= global_UIBackBuffer.width - 50) && // 50: 
                (global_UIMouseState.LClick_y >= 0) &&
                (global_UIMouseState.LClick_y <= height)
            ){
@@ -133,25 +136,27 @@ void UI_ButtonClose(
     void* handleWindow
 ){
     i32 color = 0x00ff0000;
-    // Detecting Click
+    i32 click_color = 0x00111111;
+    
+    // Detecting Click:
     if (global_UIMouseState.LClick) {
+        // global_UIMouseState.CLOSEBTN_CLICK = true;
         if (
             (global_UIMouseState.LClick_x >= x) && 
             (global_UIMouseState.LClick_x <= x+width) &&
             (global_UIMouseState.LClick_y >= y) &&
             (global_UIMouseState.LClick_y <= y+height)
         ){
-            // if (!colorOnClick)
-            // color = 0x00f75d1e;
-            color = 0x00111111;
-            // else
-                // color = colorOnClick();
-            
+            color = click_color;
             if (closeApp) {
+            // if (closeApp && global_UIMouseState.CLOSEBTN_CLICK) {
                 closeApp(handleWindow);
             }
         }
     }
+
+
+
 
     u32* pixel =  (
         (u32*)global_UIBackBuffer.memory + y * global_UIBackBuffer.width + x
@@ -179,6 +184,10 @@ void UI_ButtonClose(
         y + (height/2 - close_btn_height/2),
         close_btn_width, close_btn_height
     );
+
+
+
+
 }
 
 

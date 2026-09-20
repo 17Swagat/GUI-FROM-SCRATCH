@@ -134,9 +134,14 @@ void win32_DrawText(
 }
 
 void win32_closeApp(void* handleWindow){
-    DestroyWindow((HWND)handleWindow);
+    global_UIMouseState.CLOSEBTN_CLICK = true;
+    // if (global_UIMouseState.CLOSEBTN_CLICK)
+        // DestroyWindow((HWND)handleWindow);
 }
 
+void win32_closeApp2(HWND hwnd) {
+    DestroyWindow(hwnd);
+}
 
 void PLATFORM_IMPL_DrawText(const char* text, int x, int y, int width, int height){
     win32_DrawText(text, x, y, width, height);
@@ -153,20 +158,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UIMouseState.LClick_x = GET_X_LPARAM(lParam);
             global_UIMouseState.LClick_y = GET_Y_LPARAM(lParam);
 
-            // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
-            // Right now I know UPTO where the the TopBar() is..
-            // [Checking]: Click On The TopBar
-            if (
-                // x:
-                (global_UIMouseState.LClick_x >= 0) &&
-                (global_UIMouseState.LClick_x <= global_UIBackBuffer.width- 50) && // - 50, because of the width occupied by the close [X] button
-                // y:
-                (global_UIMouseState.LClick_y >= 0) && 
-                (global_UIMouseState.LClick_y <= 50)  // 50: TopBar() Height
-            ){
-                ReleaseCapture();
-                SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
-            }
+            // [PASTE HERE]:
             
             return 0;
         }
@@ -175,6 +167,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UIMouseState.LClick = false;
             global_UIMouseState.LClick_x = -1;
             global_UIMouseState.LClick_y = -1;
+
+            if (global_UIMouseState.CLOSEBTN_CLICK) {
+                global_UIMouseState.CLOSEBTN_CLICK = false;
+                win32_closeApp2(hwnd);
+            }
+
             return 0;
         }
 
@@ -190,11 +188,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             return 0;
         }
 
-        case WM_CLOSE: {
+        // NOT Usefull now: [Since implementing my own [X] btn nd TabBar]
+        // case WM_CLOSE: {
             // THIS CODE GET'S ACTIVATED: "When user clicks the X button TO CLOSE THE WINDOW".
-            DestroyWindow(hwnd);
-            return 0;
-        }
+            // DestroyWindow(hwnd);
+            // return 0;
+        // }
 
         // NOT in use right now. Since disabled window resizing
         case WM_SIZE: {
@@ -222,6 +221,21 @@ i32 func_colorChange(){
 }
 
 void func_moveAppOnTabBarClick(void* hwnd){
+   // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
+            // Right now I know UPTO where the the TopBar() is..
+            // [Checking]: Click On The TopBar
+            // if (
+            //     // x:
+            //     (global_UIMouseState.LClick_x >= 0) &&
+            //     (global_UIMouseState.LClick_x <= global_UIBackBuffer.width- 50) && // - 50, because of the width occupied by the close [X] button
+            //     // y:
+            //     (global_UIMouseState.LClick_y >= 0) && 
+            //     (global_UIMouseState.LClick_y <= 50)  // 50: TopBar() Height
+            // ){
+            //     ReleaseCapture();
+            //     SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+            // }
+
     ReleaseCapture();
     SendMessage((HWND) hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
 }
