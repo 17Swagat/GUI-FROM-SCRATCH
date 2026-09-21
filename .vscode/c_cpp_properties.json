@@ -8,6 +8,7 @@
                 // "UNICODE",
                 // "SKB_DEBUG",
                 "__UI__",
+                "__UILAYOUT__",
                 "DEBUG"
             ],
             "windowsSdkVersion": "10.0.19041.0",

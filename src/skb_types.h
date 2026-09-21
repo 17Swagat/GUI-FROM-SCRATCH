@@ -8,6 +8,7 @@
 #define static_global static 
 #define static_local static 
 #define static_func static 
+#define static_field static 
 
 typedef int8_t   i8;
 typedef int16_t  i16;

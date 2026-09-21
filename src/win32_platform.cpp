@@ -6,6 +6,9 @@
 #define __UI__
 #include "ui.h"
 
+#define __UILAYOUT__
+#include "ui_layout.h"
+
 #include <windows.h>
 #include <windowsx.h>
 #include <stdio.h>
@@ -16,10 +19,6 @@
 // Win32:
 static_global BITMAPINFO win32_globalBitmapinfo;
 static_global HBITMAP win32_globalBitmap;
-
-// Game:
-
-// UI_BackBuffer global_UIBackBuffer;
 
 void win32_create_backbuffer(int width, int height, UI_BackBuffer* gameBackBuffer) 
 {
@@ -135,12 +134,6 @@ void win32_DrawText(
 
 void win32_closeApp(void* handleWindow){
     global_UIMouseState.CLOSEBTN_CLICK = true;
-    // if (global_UIMouseState.CLOSEBTN_CLICK)
-        // DestroyWindow((HWND)handleWindow);
-}
-
-void win32_closeApp2(HWND hwnd) {
-    DestroyWindow(hwnd);
 }
 
 void PLATFORM_IMPL_DrawText(const char* text, int x, int y, int width, int height){
@@ -168,9 +161,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UIMouseState.LClick_x = -1;
             global_UIMouseState.LClick_y = -1;
 
+            // Close Button [X]:
             if (global_UIMouseState.CLOSEBTN_CLICK) {
                 global_UIMouseState.CLOSEBTN_CLICK = false;
-                win32_closeApp2(hwnd);
+
+                // Check: if the cursor is on the Cross Btn of not?
+                global_UIMouseState.LClick_x = GET_X_LPARAM(lParam);
+                global_UIMouseState.LClick_y = GET_Y_LPARAM(lParam);
+                if (UIFunc_isCursorOnCloseBtn())
+                    DestroyWindow(hwnd);
             }
 
             return 0;
@@ -220,22 +219,8 @@ i32 func_colorChange(){
     return color;
 }
 
-void func_moveAppOnTabBarClick(void* hwnd){
+void win32_moveAppOnTabBarClick(void* hwnd){
    // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
-            // Right now I know UPTO where the the TopBar() is..
-            // [Checking]: Click On The TopBar
-            // if (
-            //     // x:
-            //     (global_UIMouseState.LClick_x >= 0) &&
-            //     (global_UIMouseState.LClick_x <= global_UIBackBuffer.width- 50) && // - 50, because of the width occupied by the close [X] button
-            //     // y:
-            //     (global_UIMouseState.LClick_y >= 0) && 
-            //     (global_UIMouseState.LClick_y <= 50)  // 50: TopBar() Height
-            // ){
-            //     ReleaseCapture();
-            //     SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
-            // }
-
     ReleaseCapture();
     SendMessage((HWND) hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
 }
@@ -246,7 +231,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WNDCLASSA wc = {};
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
-    wc.lpszClassName = "Learn DirectX11 Window Class";
+    wc.lpszClassName = "GUI FROM SCRATCH";
     wc.hCursor = LoadCursorA(NULL, IDC_ARROW);
     RegisterClassA(&wc);
 
@@ -299,12 +284,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Game Initialization: 
     // "Filling Backbuffer with BG color & RECT color"
-    i32 bgColor = 0x00aa00aa;
-    UI_FillBackground(&global_UIBackBuffer, bgColor);
-    // gameStateUpdate(
-    //     &globalGameBackBuffer, 
-    //     (-1),  // Intentionally Giving [INVALID VALUE]
-    //     true);
+    // i32 bgColor = 0x00aaaaaa;
+    // UI_FillBackground(&global_UIBackBuffer, bgColor);
+
     
     // Win32 Window
     ShowWindow(hwnd, nCmdShow);
@@ -373,11 +355,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         // win32_keyboardInput(deltaTime, &globalGameBackBuffer);
 
         // [[ Render ]]:
-        UI_FillBackground(&global_UIBackBuffer, bgColor);
-        UI_TabBar(win32_closeApp,(void*) hwnd, func_moveAppOnTabBarClick);
+        // UI_FillBackground(&global_UIBackBuffer, bgColor);
+        // UI_TabBar(win32_closeApp,(void*) hwnd, win32_moveAppOnTabBarClick);
         
-        UI_Button(50, 300, 200, 40, NULL);
-        UI_Button(100, 100, 100, 100, func_colorChange);
+        // UI_Button(50, 300, 200, 40, NULL);
+        // UI_Button(100, 100, 100, 100, func_colorChange);
+
+        // UI_Button(global_UIBackBuffer.width/2, global_UIBackBuffer.height/2, 150, 150, 
+        //     [](){return 0x00ffff00;} 
+        // );
+        UI_LAYOUT(hwnd, win32_moveAppOnTabBarClick);
 
 
         // [[ PRESENT ]]:
