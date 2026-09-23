@@ -1,3 +1,9 @@
+/*
+[MAJOR TODOS]:
+1. Making the button click smooth with animation
+2. [BUG]: Proper color changing on holding the title-bar (dragging it around).
+*/
+
 // #define SKB_DEBUG
 #define DEBUG
 #include "skb_debug.h"
@@ -136,6 +142,46 @@ void win32_closeApp(void* handleWindow){
     global_UIMouseState.CLOSEBTN_CLICK = true;
 }
 
+
+// struct KeyState {
+//     bool isDown;
+//     bool released;
+//     bool pressed;
+// };
+
+// KeyState Key_A;
+// KeyState Key_W;
+
+// void win32_updateKey(KeyState* key, i32 vk){
+//     // TODO: Study about GetAsyncKeyState(vk)
+//     bool currentlyDown = (GetAsyncKeyState(vk) & 0x8000) != 0;
+//     key->pressed = currentlyDown && !key->isDown;
+//     key->released = !currentlyDown && key->isDown;
+//     key->isDown = currentlyDown;
+// }
+
+// TODO: WORK on Keyboard Inputs:
+void win32_KeyboardInput(double deltaTime)
+{
+    if (GetAsyncKeyState('A') < 0 ) {
+        global_UIKeyboardState.pressed = true;
+        global_UIKeyboardState.key = 'A';
+        OutputDebugStringA("A\n");
+        return;
+    }  
+    if (GetAsyncKeyState('D') < 0) {
+        global_UIKeyboardState.pressed = true;
+        global_UIKeyboardState.key = 'D';
+        OutputDebugStringA("D\n");
+        return;
+    } 
+    
+    global_UIKeyboardState.pressed = false;
+    global_UIKeyboardState.key = '\0';
+}
+
+
+
 void PLATFORM_IMPL_DrawText(const char* text, int x, int y, int width, int height){
     win32_DrawText(text, x, y, width, height);
 }
@@ -152,6 +198,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UIMouseState.LClick_y = GET_Y_LPARAM(lParam);
 
             // [PASTE HERE]:
+            if (UIFunc_isTabBarClick()) {
+                global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+                // global_UIMouseState.TABBAR_CLICK = true;
+            }
             
             return 0;
         }
@@ -160,6 +210,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UIMouseState.LClick = false;
             global_UIMouseState.LClick_x = -1;
             global_UIMouseState.LClick_y = -1;
+
+            // TabBar Click
+            // if (global_UIMouseState.TABBAR_CLICK) {
+            //     global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
+            //     global_UIMouseState.TABBAR_CLICK = false;
+            // }
 
             // Close Button [X]:
             if (global_UIMouseState.CLOSEBTN_CLICK) {
@@ -202,26 +258,53 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
 
         case WM_KEYDOWN: {
+            // if (wParam == 'A') {
+            //     OutputDebugStringA("A is pressed\n");
+            // }
+            
             // Detect ESC Key Press
             if (wParam == VK_ESCAPE) {
-                DestroyWindow(hwnd);
+                #if defined(DEBUG)
+                    DestroyWindow(hwnd);
+                #endif
             }
-
             return 0;
+        }
+
+        // case WM_KEYUP: {
+        //     // if (wParam == 'A') {
+        //     //     OutputDebugStringA("A is released\n");
+        //     // }
+            
+        //     return 0;
+        // }
+
+        case WM_NCLBUTTONDOWN: {
+            if (global_UIMouseState.TABBAR_CLICK) {
+                global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+            }
+            return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+            // return 0;
+        }
+
+        case WM_NCLBUTTONUP: {
+            global_UIMouseState.TABBAR_CLICK = false;
+            global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
+            return DefWindowProcA(hwnd, uMsg, wParam, lParam);
         }
     }
     
     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
 }
 
-i32 func_colorChange(){
-    i32 color = 0x00f7fdae;
-    return color;
-}
-
 void win32_moveAppOnTabBarClick(void* hwnd){
-   // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
-    ReleaseCapture();
+    // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
+    global_UIMouseState.TABBAR_CLICK = true;
+    // global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+    
+    
+    // What is the use of ReleaseCapture()? Even without it the program is behaving as expected?
+    // ReleaseCapture();
     SendMessage((HWND) hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
 }
 
@@ -293,7 +376,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Game-Loop:
     bool AppRunning = true;
-    // For, FPS: (maybe?)
+    
+    
+    // // For, FPS: (maybe?)
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency); // fixed. (during BOOT)
     i64 perfCountFrequency = frequency.QuadPart; // fixed
@@ -301,8 +386,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LARGE_INTEGER startCounter;
     QueryPerformanceCounter(&startCounter);
 
-    // RDTSC:
-    i64 StartCPUCycleCount =  __rdtsc(); // the total number of CPU clock cycles that have elapsed since the processor was last reset or powered on
+    // // RDTSC:
+    // i64 StartCPUCycleCount =  __rdtsc(); // the total number of CPU clock cycles that have elapsed since the processor was last reset or powered on
 
   
     while (AppRunning) {
@@ -346,26 +431,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         double deltaTime =
             (double) counterElapsed / (double) perfCountFrequency; 
         
-        // debugPrint("TimeElapsed: %.3llf ms\n", deltaTime*1000);
-        // debugPrint("FPS: %.3llf\n", (double)perfCountFrequency / deltaTime);
+        // // debugPrint("TimeElapsed: %.3llf ms\n", deltaTime*1000);
+        // // debugPrint("FPS: %.3llf\n", (double)perfCountFrequency / deltaTime);
 
-        startCounter = endCounter; // Reset the start counter for the next frame
         
         // Update:
         // win32_keyboardInput(deltaTime, &globalGameBackBuffer);
 
         // [[ Render ]]:
-        // UI_FillBackground(&global_UIBackBuffer, bgColor);
-        // UI_TabBar(win32_closeApp,(void*) hwnd, win32_moveAppOnTabBarClick);
-        
-        // UI_Button(50, 300, 200, 40, NULL);
-        // UI_Button(100, 100, 100, 100, func_colorChange);
+        win32_KeyboardInput(deltaTime);
+        UI_LAYOUT(hwnd, deltaTime, win32_moveAppOnTabBarClick);
 
-        // UI_Button(global_UIBackBuffer.width/2, global_UIBackBuffer.height/2, 150, 150, 
-        //     [](){return 0x00ffff00;} 
-        // );
-        UI_LAYOUT(hwnd, win32_moveAppOnTabBarClick);
-
+        startCounter = endCounter; // Reset the start counter for the next frame
 
         // [[ PRESENT ]]:
         win32_DisplayUIBackBuffer(hwnd);

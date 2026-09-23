@@ -6,7 +6,8 @@ if not exist build mkdir build
 pushd build
 @REM cl /nologo /Zi /Od /EHsc /fsanitize=address ..\main.cpp user32.lib gdi32.lib /link /INCREMENTAL:NO
 @REM  cl /nologo /Zi /Od /EHsc ..\src\main.cpp user32.lib gdi32.lib /link /INCREMENTAL:NO
-(cl /nologo /Zi /Od /EHsc ..\src\win32_platform.cpp /link /INCREMENTAL:NO) 
+@REM  (cl /nologo /Zi /Od /EHsc /std:c++17 ..\src\win32_platform.cpp /link /INCREMENTAL:NO) 
+(cl /nologo /Zi /Od /EHsc /std:c++20 ..\src\win32_platform.cpp /link /INCREMENTAL:NO) 
 popd
 
 
