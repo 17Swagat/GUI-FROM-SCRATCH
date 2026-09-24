@@ -1,7 +1,12 @@
 /*
 [MAJOR TODOS]:
-1. Making the button click smooth with animation
-2. [BUG]: Proper color changing on holding the title-bar (dragging it around).
+1. Making the button click smooth with animation 
+    - Now better than before.
+    - Still Don't know how to have a bouncy animation on press
+2. How to put a text and symbols to a block of memory and display it?
+    - For Text in Buttons, Text Fields, etc..
+    - Being able to load logos/symbols and display in the memory section.
+3. [BUG]: Proper color changing on holding the title-bar (dragging it around).
 */
 
 // #define SKB_DEBUG
