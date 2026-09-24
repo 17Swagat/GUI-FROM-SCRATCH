@@ -16,11 +16,15 @@ i32 func_colorChange(){
     return color;
 }
 
+static_global bool initStuff = false;
 static_func void init(){
-    global_UIMouseState.TABBAR_X = 0;
-    global_UIMouseState.TABBAR_Y = 0;
-    global_UIMouseState.TABBAR_WIDTH = global_UIBackBuffer.width;
-    global_UIMouseState.TABBAR_HEIGHT = 50;
+    if (!initStuff) {
+        global_UIMouseState.TABBAR_X = 0;
+        global_UIMouseState.TABBAR_Y = 0;
+        global_UIMouseState.TABBAR_WIDTH = global_UIBackBuffer.width;
+        global_UIMouseState.TABBAR_HEIGHT = 50;
+        initStuff = true;
+    }
 }
 
 void UI_LAYOUT(
@@ -28,8 +32,9 @@ void UI_LAYOUT(
     double deltaTime,
     void (*tabbarClick)(void*)
 ){
-
-    init();
+    if (!initStuff) {
+        init();
+    }
 
     UI_FillBackground(&global_UIBackBuffer, COLOR_BG_COLOR);
     UI_TabBar(
