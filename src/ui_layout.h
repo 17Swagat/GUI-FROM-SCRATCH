@@ -3,7 +3,6 @@
 #include "skb_types.h"
 #include "ui.h"
 
-
 void UI_LAYOUT(
     void* handleWindow,
     double deltaTime,
@@ -30,10 +29,9 @@ void UI_LAYOUT(
     void (*tabbarClick)(void*)
 ){
 
-    i32 bgColor = 0x00000000;
     init();
 
-    UI_FillBackground(&global_UIBackBuffer, bgColor);
+    UI_FillBackground(&global_UIBackBuffer, COLOR_BG_COLOR);
     UI_TabBar(
         [](void*data){global_UIMouseState.CLOSEBTN_CLICK = true;}, // win32_closeApp,
         // For Tab Click:
@@ -50,7 +48,7 @@ void UI_LAYOUT(
     // );
 
     // BUTTON PRESS ANIMATION
-    // static bool pressed = false;
+    // #1
     int x = 100;
     int y = 100;
     int w = 150;
@@ -60,6 +58,10 @@ void UI_LAYOUT(
         .triggerKey = 'A'
     };
     UI_ButtonPressed(&btn, deltaTime);
+
+    // #2
+    ButtonPressed btn2 = {.x = 350, .y=200, .width=300, .height= 220, .triggerKey='W'};
+    UI_ButtonPressed(&btn2, deltaTime);
 }
 
 #endif

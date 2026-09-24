@@ -2,6 +2,7 @@
 
 #include "skb_types.h"
 
+#define COLOR_BG_COLOR 0x00990099
 #define COLOR_TABBAR_DEFAULT 0x00323233
 #define COLOR_TABBAR_CLICKED 0x00543233
 #define COLOR_BUTTON_DEFAULT 0x000000ff
@@ -108,10 +109,14 @@ void UI_ButtonPressed(
     ButtonPressed* button,
     double deltaTime
 ){
-    static_local int x = button->x;
-    static_local int y = button->y;
-    static_local int width = button->width;
-    static_local int height = button->height;
+    // static_local int x = button->x;
+    // static_local int y = button->y;
+    // static_local int width = button->width;
+    // static_local int height = button->height;
+    int x = button->x;
+    int y = button->y;
+    int width = button->width;
+    int height = button->height;
     i32 color = 0x00555555;
 
     double buttonScale = 1.0;
@@ -213,6 +218,7 @@ void UI_ButtonPressed(
         for(i32 i = 0; i < width; i++){
             if (
                 (y < global_UIBackBuffer.height - height) 
+
                     || 
                 (y > 0)
             )
@@ -222,7 +228,7 @@ void UI_ButtonPressed(
             pixel += global_UIBackBuffer.width;
     }
 
-    PLATFORM_IMPL_DrawText(&button->triggerKey, x, y, 150, 150);
+    PLATFORM_IMPL_DrawText(&button->triggerKey, x, y, 10, 10);
 }
 
 void UI_FillBackground(UI_BackBuffer *backbuffer, i32 color){

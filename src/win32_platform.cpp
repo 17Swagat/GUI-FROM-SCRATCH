@@ -114,7 +114,8 @@ void win32_DrawText(
     );
 
     // Don't draw a background behind the text.
-    SetBkMode(hdc, TRANSPARENT);
+    SetBkMode(hdc, RGB(0, 255, 255));
+    // SetBkMode(hdc, TRANSPARENT);
 
     // Text color
     SetTextColor(hdc, RGB(255, 255, 255));
@@ -173,6 +174,12 @@ void win32_KeyboardInput(double deltaTime)
         global_UIKeyboardState.pressed = true;
         global_UIKeyboardState.key = 'D';
         OutputDebugStringA("D\n");
+        return;
+    } 
+    if (GetAsyncKeyState('W') < 0) {
+        global_UIKeyboardState.pressed = true;
+        global_UIKeyboardState.key = 'W';
+        OutputDebugStringA("W\n");
         return;
     } 
     
