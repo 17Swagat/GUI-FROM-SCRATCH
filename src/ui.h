@@ -28,7 +28,7 @@ struct UI_MouseState {
     i32 TABBAR_X = 0;
     i32 TABBAR_Y = 0;
     u32 TABBAR_WIDTH = 0;
-    u32 TABBAR_HEIGHT = 0;
+    u32 TABBAR_HEIGHT = 50; 
     u32 TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
 
     // CLOSE [X] Btn:
@@ -260,7 +260,10 @@ void UI_TabBar(
                 // color = global_UIMouseState.TABBAR_COLOR;
                 tabbarClick(handleWindow);
            } 
-    } 
+    }  else {
+        global_UIMouseState.TABBAR_CLICK = false;
+        global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
+    }
 
     for(i32 y = 0; y < height; y++){
         for (i32 x = 0; x < width; x++){
@@ -391,17 +394,31 @@ bool UIFunc_isCursorOnCloseBtn(){
 
 
 bool UIFunc_isTabBarClick() {
+    // if (
+    //     (global_UIMouseState.LClick_x >= global_UIMouseState.TABBAR_X) 
+    //     && 
+    //     (global_UIMouseState.LClick_x <= global_UIMouseState.TABBAR_X + global_UIMouseState.TABBAR_WIDTH) 
+    //     &&
+    //     (global_UIMouseState.LClick_y >= global_UIMouseState.TABBAR_Y) 
+    //     &&
+    //     (global_UIMouseState.LClick_y <= global_UIMouseState.TABBAR_Y + global_UIMouseState.TABBAR_HEIGHT)
+    //     && 
+    //     (global_UIMouseState.TABBAR_CLICK)
+    // ){
+    //     return true;
+    // }
+
     if (
-        (global_UIMouseState.LClick_x >= global_UIMouseState.TABBAR_X) 
+        (global_UIMouseState.LClick_x >= 0) &&
+        (global_UIMouseState.LClick_x <= global_UIBackBuffer.width)
         && 
-        (global_UIMouseState.LClick_x <= global_UIMouseState.TABBAR_X + global_UIMouseState.TABBAR_WIDTH) 
-        &&
-        (global_UIMouseState.LClick_y >= global_UIMouseState.TABBAR_Y) 
-        &&
-        (global_UIMouseState.LClick_y <= global_UIMouseState.TABBAR_Y + global_UIMouseState.TABBAR_HEIGHT)
+        (global_UIMouseState.LClick_y >= 0) && 
+        (global_UIMouseState.LClick_y <= global_UIMouseState.TABBAR_HEIGHT)
     ){
         return true;
     }
+
+
     return false;
 }
 

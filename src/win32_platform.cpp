@@ -21,7 +21,7 @@
 #include "ui_layout.h"
 
 #include <windows.h>
-#include <windowsx.h>
+#include <windowsx.h> // Resposible for: (GET_X_LPARAM), (GET_Y_LPARAM)
 #include <stdio.h>
 
 #pragma comment(lib, "user32")
@@ -30,6 +30,7 @@
 // Win32:
 static_global BITMAPINFO win32_globalBitmapinfo;
 static_global HBITMAP win32_globalBitmap;
+
 
 void win32_create_backbuffer(int width, int height, UI_BackBuffer* gameBackBuffer) 
 {
@@ -199,6 +200,15 @@ void PLATFORM_IMPL_DrawText(const char* text, int x, int y, int width, int heigh
 }
 
 
+// TEMP:
+// Dragable:
+///////////////////////////////////
+bool g_tabBarHovered  = false;
+bool g_tabBarPressed  = false;
+bool g_draggingWindow = false;
+POINT g_dragStartMouse;
+POINT g_windowStart;
+///////////////////////////////////
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
@@ -209,12 +219,72 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UIMouseState.LClick_x = GET_X_LPARAM(lParam);
             global_UIMouseState.LClick_y = GET_Y_LPARAM(lParam);
 
-            // [PASTE HERE]:
-            if (UIFunc_isTabBarClick()) {
-                global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
-                // global_UIMouseState.TABBAR_CLICK = true;
+            // [TABBAR DRAGGABLE]:=>
+            if (
+                (global_UIMouseState.LClick_x >= 0) &&
+                (global_UIMouseState.LClick_x <= global_UIBackBuffer.width)
+                && 
+                (global_UIMouseState.LClick_y >= 0) && 
+                (global_UIMouseState.LClick_y <= global_UIMouseState.TABBAR_HEIGHT)
+            ){
+            // if (UIFunc_isTabBarClick()) {
+                OutputDebugStringA("Tabbar Clicked");
+                g_tabBarPressed = true;
+                g_draggingWindow = true;
+
+                POINT mouse;
+                GetCursorPos(&mouse);
+
+                g_dragStartMouse = mouse;
+
+                RECT windowRect;
+                GetWindowRect(hwnd, &windowRect);
+
+                g_windowStart.x = windowRect.left;
+                g_windowStart.y = windowRect.top;
+
+                InvalidateRect(hwnd, NULL, FALSE);
+
+                SetCapture(hwnd);
             }
+
+
+            // [PASTE HERE]:
+            // if (UIFunc_isTabBarClick()) {
+            //     OutputDebugStringA("Tabbar Clicked\n");
+            //     global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+            //     // global_UIMouseState.TABBAR_CLICK = true;
+            // }
+
+            // if (global_UIMouseState.TABBAR_CLICK) {
+            //     global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+            // }
+
             
+            return 0;
+        }
+
+        case WM_MOUSEMOVE:
+        {
+            if (g_draggingWindow)
+            {
+                POINT mouse;
+                GetCursorPos(&mouse);
+            
+                int dx = mouse.x - g_dragStartMouse.x;
+                int dy = mouse.y - g_dragStartMouse.y;
+            
+                SetWindowPos(
+                    hwnd,
+                    NULL,
+                    g_windowStart.x + dx,
+                    g_windowStart.y + dy,
+                    0,
+                    0,
+                    SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
+                );
+            }
+        
             return 0;
         }
 
@@ -222,6 +292,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UIMouseState.LClick = false;
             global_UIMouseState.LClick_x = -1;
             global_UIMouseState.LClick_y = -1;
+
+            // Tabar:
+            if (g_draggingWindow)
+            {
+                g_draggingWindow = false;
+                g_tabBarPressed = false;
+                
+                ReleaseCapture();
+                
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+
 
             // TabBar Click
             // if (global_UIMouseState.TABBAR_CLICK) {
@@ -265,7 +347,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // NOT in use right now. Since disabled window resizing
         case WM_SIZE: {
             // Handle window resizing if needed
-            OutputDebugStringA("Window resized\n");
+            // OutputDebugStringA("Window resized\n");
             return 0;
         }
 
@@ -291,17 +373,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         //     return 0;
         // }
 
+        // UNDO COMMENT:
         case WM_NCLBUTTONDOWN: {
             if (global_UIMouseState.TABBAR_CLICK) {
                 global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
             }
+            
             return DefWindowProcA(hwnd, uMsg, wParam, lParam);
             // return 0;
         }
 
         case WM_NCLBUTTONUP: {
-            global_UIMouseState.TABBAR_CLICK = false;
+            if (global_UIMouseState.TABBAR_CLICK)
+                global_UIMouseState.TABBAR_CLICK = false;
             global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
+            win32_RepaintWindow(hwnd);
             return DefWindowProcA(hwnd, uMsg, wParam, lParam);
         }
     }
@@ -309,15 +395,19 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
 }
 
+
 void win32_moveAppOnTabBarClick(void* hwnd){
-    // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
-    global_UIMouseState.TABBAR_CLICK = true;
-    // global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+    // #NEW:
+    // Will handle window drag myself
     
-    
-    // What is the use of ReleaseCapture()? Even without it the program is behaving as expected?
-    // ReleaseCapture();
-    SendMessage((HWND) hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+    // #OLD:
+    // // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
+    // // global_UIMouseState.TABBAR_CLICK = true;
+    // // What is the use of ReleaseCapture()? Even without it the program is behaving as expected?
+    // // ReleaseCapture();
+    ///////////////
+    // SendMessage((HWND) hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+    ///////////////
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -400,8 +490,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // // RDTSC:
     // i64 StartCPUCycleCount =  __rdtsc(); // the total number of CPU clock cycles that have elapsed since the processor was last reset or powered on
-
-  
     while (AppRunning) {
         MSG msg = { };
         
