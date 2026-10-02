@@ -8,7 +8,7 @@ Inspired by [RAD DEBUGGER](https://github.com/EpicGames/raddebugger) , [FILE PIL
 - MSVC compiler (Developer Command Prompt For VS)
 Basically, you need [MSVC Build Tools](https://visualstudio.microsoft.com/downloads/?q=build+tools). 
 
-- OS: Windows
+- OS: Windows (I'm running in Windows 11)
 
 ## How to compile & run it?
 - Run `uiBuild.bat` to compile the program. 
