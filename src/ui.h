@@ -84,7 +84,7 @@ void UI_Button(
     i32 x, i32 y, i32 width, i32 height, i32 (*func)()
 );
 void UI_ButtonClose(i32 x, i32 y, i32 width, i32 height);
-void UI_TabBar(
+void UI_TopBar(
     void (*closeApp)(void*), 
     void* handleWindow,
     void (*tabbarClick)(void*)
@@ -260,7 +260,7 @@ void UI_FillBackground(UI_BackBuffer *backbuffer, i32 color){
     }
 }
 
-void UI_TabBar(
+void UI_TopBar(
     void (*closeApp)(void*), 
     void* handleWindow,
     void (*tabbarClick)(void*)
@@ -442,7 +442,7 @@ bool UIFunc_isMouseOver_TopBar() {
 
     if (
         (global_UI_MouseState.LClick_x >= 0) &&
-        (global_UI_MouseState.LClick_x <= global_UI_BackBuffer.width)
+        (global_UI_MouseState.LClick_x <= global_UI_BackBuffer.width - global_UI_MouseState.CLOSEBTN_WIDTH)
         && 
         (global_UI_MouseState.LClick_y >= 0) && 
         (global_UI_MouseState.LClick_y <= global_UI_Topbar.height)

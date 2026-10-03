@@ -43,7 +43,7 @@ void UI_LAYOUT(
     }
 
     UI_FillBackground(&global_UI_BackBuffer, COLOR_BG_COLOR);
-    UI_TabBar(
+    UI_TopBar(
         // win32_closeApp:
         [](void*data){global_UI_MouseState.CLOSEBTN_CLICK = true;}, 
         // For Tab Click:

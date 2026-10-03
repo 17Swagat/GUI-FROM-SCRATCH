@@ -200,15 +200,6 @@ void PLATFORM_IMPL_DrawText(const char* text, int x, int y, int width, int heigh
 }
 
 
-// TEMP:
-// Dragable:
-///////////////////////////////////
-bool g_tabBarHovered  = false;
-// bool g_tabBarPressed  = false;
-// bool g_draggingWindow = false;
-// POINT g_dragStartMouse;
-// POINT g_windowStart;
-///////////////////////////////////
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
