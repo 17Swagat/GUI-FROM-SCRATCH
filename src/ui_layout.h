@@ -19,10 +19,16 @@ i32 func_colorChange(){
 static_global bool initStuff = false;
 static_func void init(){
     if (!initStuff) {
-        global_UIMouseState.TABBAR_X = 0;
-        global_UIMouseState.TABBAR_Y = 0;
-        global_UIMouseState.TABBAR_WIDTH = global_UIBackBuffer.width;
-        global_UIMouseState.TABBAR_HEIGHT = 50;
+        // global_UI_MouseState.TABBAR_X = 0;
+        // global_UI_MouseState.TABBAR_Y = 0;
+        // global_UI_MouseState.TABBAR_WIDTH = global_UI_BackBuffer.width;
+        // global_UI_MouseState.TABBAR_HEIGHT = 50;
+        global_UI_Topbar.x = 0;
+        global_UI_Topbar.y = 0;
+        global_UI_Topbar.width = global_UI_BackBuffer.width;
+        global_UI_Topbar.height = 50;
+        // global_UI_Topbar.pressed = false;
+        // global_UI_Topbar.dragged = false;
         initStuff = true;
     }
 }
@@ -36,20 +42,20 @@ void UI_LAYOUT(
         init();
     }
 
-    UI_FillBackground(&global_UIBackBuffer, COLOR_BG_COLOR);
+    UI_FillBackground(&global_UI_BackBuffer, COLOR_BG_COLOR);
     UI_TabBar(
         // win32_closeApp:
-        [](void*data){global_UIMouseState.CLOSEBTN_CLICK = true;}, 
+        [](void*data){global_UI_MouseState.CLOSEBTN_CLICK = true;}, 
         // For Tab Click:
         handleWindow,
-        tabbarClick,
-        global_UIMouseState.TABBAR_HEIGHT
+        tabbarClick
+        // ,global_UI_MouseState.TABBAR_HEIGHT
     );
         
     // UI_Button(50, 300, 200, 40, NULL);
     // UI_Button(100, 100, 100, 100, func_colorChange);
 
-    // UI_Button(global_UIBackBuffer.width/2, global_UIBackBuffer.height/2, 150, 150, 
+    // UI_Button(global_UI_BackBuffer.width/2, global_UI_BackBuffer.height/2, 150, 150, 
     //     [](){return 0x00ffff00;} 
     // );
 

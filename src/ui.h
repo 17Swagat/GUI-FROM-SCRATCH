@@ -16,20 +16,41 @@ struct UI_BackBuffer{
 };
 
 
+// typedef struct tagPOINT
+// {
+//     long  x;
+//     long  y;
+// } MOUSEPOINT;
+
+struct UI_Topbar {
+    i32 x;
+    i32 y;
+    u32 width;
+    u32 height;
+    u32 color;
+    bool pressed = false;
+    bool draggingWindow = false;
+    struct {long x; long y;} mousePoint;
+    struct {long x; long y;} windowStart;
+    // MOUSEPOINT mousePoint;
+    // MOUSEPOINT windowStart;
+};
+
 struct UI_MouseState {
     bool LClick = false;
     bool RClick = false;
     i32 LClick_x = -1; 
     i32 LClick_y = -1; 
 
+    // TODO: SEPRATE THE TAB SPECIFIC INFORMATION INTO A DIFFERENT STRUCT:
     // TabBar
     bool TABBAR_CLICK = false;
     // Will Get Filled:
-    i32 TABBAR_X = 0;
-    i32 TABBAR_Y = 0;
-    u32 TABBAR_WIDTH = 0;
-    u32 TABBAR_HEIGHT = 50; 
-    u32 TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
+    // i32 TABBAR_X = 0;
+    // i32 TABBAR_Y = 0;
+    // u32 TABBAR_WIDTH = 0;
+    // u32 TABBAR_HEIGHT = 50; 
+    // u32 TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
 
     // CLOSE [X] Btn:
     bool CLOSEBTN_CLICK = false;
@@ -50,9 +71,10 @@ struct UI_KeyboardState{
     char key = '\0';
 };
 
-UI_BackBuffer global_UIBackBuffer;
-UI_MouseState global_UIMouseState;
-UI_KeyboardState global_UIKeyboardState;
+UI_BackBuffer global_UI_BackBuffer;
+UI_MouseState global_UI_MouseState;
+UI_KeyboardState global_UI_KeyboardState;
+UI_Topbar global_UI_Topbar;
 
 // TODO: Think about this later
 // static_global bool GUI_INIT;
@@ -65,12 +87,13 @@ void UI_ButtonClose(i32 x, i32 y, i32 width, i32 height);
 void UI_TabBar(
     void (*closeApp)(void*), 
     void* handleWindow,
-    void (*tabbarClick)(void*),
-    i32 height
+    void (*tabbarClick)(void*)
+    // ,i32 height
 );
 
 
-bool UIFunc_isTabBarClick();
+// bool UIFunc_isTabBarClick();
+bool UIFunc_isMouseOver_TopBar();
 bool UIFunc_isCursorOnCloseBtn();
 
 // Will Get Implemented by the Platform Layer:
@@ -126,25 +149,25 @@ void UI_ButtonPressed(
     // Keyboard Click: 
     // Current 'A'/'D' Trigger
     bool triggerButton = false;
-    if (global_UIKeyboardState.pressed){
-        if (global_UIKeyboardState.key == button->triggerKey) {
+    if (global_UI_KeyboardState.pressed){
+        if (global_UI_KeyboardState.key == button->triggerKey) {
             triggerButton = true;
         }
         // if (
-        //     (global_UIKeyboardState.key == 'A') ||
-        //     (global_UIKeyboardState.key == 'D')
+        //     (global_UI_KeyboardState.key == 'A') ||
+        //     (global_UI_KeyboardState.key == 'D')
         // ) {
         //     triggerButton = true;
         // }
     }
     
     // Detecting Mouse Click:
-    if (global_UIMouseState.LClick) {
+    if (global_UI_MouseState.LClick) {
         if (
-            (global_UIMouseState.LClick_x >= x) && 
-            (global_UIMouseState.LClick_x <= x+ width) &&
-            (global_UIMouseState.LClick_y >= y) &&
-            (global_UIMouseState.LClick_y <= y + height)
+            (global_UI_MouseState.LClick_x >= x) && 
+            (global_UI_MouseState.LClick_x <= x+ width) &&
+            (global_UI_MouseState.LClick_y >= y) &&
+            (global_UI_MouseState.LClick_y <= y + height)
         ){
             button->pressed = true;
             // button->clickColor = COLOR_BUTTON_CLICKED;
@@ -211,21 +234,21 @@ void UI_ButtonPressed(
 
 
     u32* pixel =  (
-        (u32*)global_UIBackBuffer.memory + y * global_UIBackBuffer.width + x
+        (u32*)global_UI_BackBuffer.memory + y * global_UI_BackBuffer.width + x
     );
     
     for(i32 y = 0; y < height; y++) {
         for(i32 i = 0; i < width; i++){
             if (
-                (y < global_UIBackBuffer.height - height) 
+                (y < global_UI_BackBuffer.height - height) 
 
                     || 
                 (y > 0)
             )
                 *(pixel+i) = color;
         }
-        if ((y < global_UIBackBuffer.height - height) || (y > 0))
-            pixel += global_UIBackBuffer.width;
+        if ((y < global_UI_BackBuffer.height - height) || (y > 0))
+            pixel += global_UI_BackBuffer.width;
     }
 
     PLATFORM_IMPL_DrawText(&button->triggerKey, x, y, 10, 10);
@@ -240,49 +263,57 @@ void UI_FillBackground(UI_BackBuffer *backbuffer, i32 color){
 void UI_TabBar(
     void (*closeApp)(void*), 
     void* handleWindow,
-    void (*tabbarClick)(void*),
-    i32 height = 50
+    void (*tabbarClick)(void*)
+    // ,i32 height = 50
 ) {
-    i32 width = global_UIBackBuffer.width;
-    u32* pixel = (u32*)global_UIBackBuffer.memory;
-    // u32 color = global_UIMouseState.TABBAR_COLOR;
+    i32 width = global_UI_BackBuffer.width;
+    u32* pixel = (u32*)global_UI_BackBuffer.memory;
+    // u32 color = global_UI_MouseState.TABBAR_COLOR;
+    // if (height != 50) {
+    //     global_UI_MouseState.TABBAR_HEIGHT = height;
+    // }
 
-    if (global_UIMouseState.LClick) {
-           if (
-               (global_UIMouseState.LClick_x >= 0) && 
-               (global_UIMouseState.LClick_x <= global_UIBackBuffer.width - 50) && // 50: 
-               (global_UIMouseState.LClick_y >= 0) &&
-               (global_UIMouseState.LClick_y <= height)
-           ){
+    if (global_UI_MouseState.LClick) {
+        //    if (
+        //        (global_UI_MouseState.LClick_x >= 0) && 
+        //        (global_UI_MouseState.LClick_x <= global_UI_BackBuffer.width - 50) && // 50: 
+        //        (global_UI_MouseState.LClick_y >= 0) &&
+        //        (global_UI_MouseState.LClick_y <= global_UI_MouseState.TABBAR_HEIGHT)
+        //    )
+        if (UIFunc_isMouseOver_TopBar() && global_UI_Topbar.pressed)
+           {
                 // TODO: COLOR CHANGE ON TABBAR CLICK
-                global_UIMouseState.TABBAR_CLICK = true;
-                global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
-                // color = global_UIMouseState.TABBAR_COLOR;
+                // global_UI_Topbar.pressed = true;
+                global_UI_Topbar.color = COLOR_TABBAR_CLICKED;
+                // global_UI_MouseState.TABBAR_CLICK = true;
+                // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+                // color = global_UI_MouseState.TABBAR_COLOR;
                 tabbarClick(handleWindow);
            } 
     }  else {
-        global_UIMouseState.TABBAR_CLICK = false;
-        global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
+        // global_UI_MouseState.TABBAR_CLICK = false;
+        // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
+        global_UI_Topbar.color = COLOR_TABBAR_DEFAULT;
     }
 
-    for(i32 y = 0; y < height; y++){
-        for (i32 x = 0; x < width; x++){
-            pixel[x] = global_UIMouseState.TABBAR_COLOR;
+    for(i32 y = 0; y < global_UI_Topbar.height; y++){
+        for (i32 x = 0; x < global_UI_Topbar.width; x++){
+            pixel[x] = global_UI_Topbar.color;
             // pixel[x] = color;
         }
         pixel += width;
     }
 
     // Close Button:
-    global_UIMouseState.CLOSEBTN_WIDTH = 50;
-    global_UIMouseState.CLOSEBTN_HEIGHT = height;
-    global_UIMouseState.CLOSEBTN_POS_X = (width - global_UIMouseState.CLOSEBTN_WIDTH);
-    global_UIMouseState.CLOSEBTN_POS_Y = 0;
+    global_UI_MouseState.CLOSEBTN_WIDTH = 50;
+    global_UI_MouseState.CLOSEBTN_HEIGHT = global_UI_Topbar.height;
+    global_UI_MouseState.CLOSEBTN_POS_X = (width - global_UI_MouseState.CLOSEBTN_WIDTH);
+    global_UI_MouseState.CLOSEBTN_POS_Y = 0;
     UI_ButtonClose(
-        global_UIMouseState.CLOSEBTN_POS_X, 
-        global_UIMouseState.CLOSEBTN_POS_Y, 
-        global_UIMouseState.CLOSEBTN_WIDTH, 
-        global_UIMouseState.CLOSEBTN_HEIGHT 
+        global_UI_MouseState.CLOSEBTN_POS_X, 
+        global_UI_MouseState.CLOSEBTN_POS_Y, 
+        global_UI_MouseState.CLOSEBTN_WIDTH, 
+        global_UI_MouseState.CLOSEBTN_HEIGHT 
     );
 }
 
@@ -293,12 +324,12 @@ void UI_Button(
 ){
     i32 color = 0x00aaffff;
     // Detecting Click
-    if (global_UIMouseState.LClick) {
+    if (global_UI_MouseState.LClick) {
         if (
-            (global_UIMouseState.LClick_x >= x) && 
-            (global_UIMouseState.LClick_x <= x+width) &&
-            (global_UIMouseState.LClick_y >= y) &&
-            (global_UIMouseState.LClick_y <= y+height)
+            (global_UI_MouseState.LClick_x >= x) && 
+            (global_UI_MouseState.LClick_x <= x+width) &&
+            (global_UI_MouseState.LClick_y >= y) &&
+            (global_UI_MouseState.LClick_y <= y+height)
         ){
             if (!colorOnClick)
                 color = 0x00f75d1e;
@@ -308,20 +339,20 @@ void UI_Button(
     }
 
     u32* pixel =  (
-        (u32*)global_UIBackBuffer.memory + y * global_UIBackBuffer.width + x
+        (u32*)global_UI_BackBuffer.memory + y * global_UI_BackBuffer.width + x
     );
     
     for(i32 y = 0; y < height; y++) {
         for(i32 i = 0; i < width; i++){
             if (
                 // (y < gameBackBuffer->height - globalBox.height) 
-                (y < global_UIBackBuffer.height - height) 
+                (y < global_UI_BackBuffer.height - height) 
                 || (y > 0))
                 *(pixel+i) = color;
         }
         // if ((y < globalBackBuffer.height - globalBox.height) || (y > 0))
-        if ((y < global_UIBackBuffer.height - height) || (y > 0))
-            pixel += global_UIBackBuffer.width;
+        if ((y < global_UI_BackBuffer.height - height) || (y > 0))
+            pixel += global_UI_BackBuffer.width;
     }
 }
 
@@ -334,32 +365,32 @@ void UI_ButtonClose(
     i32 click_color = 0x00aa0000;
     
     // Detecting Click:
-    if (global_UIMouseState.LClick) {
-        // global_UIMouseState.CLOSEBTN_CLICK = true;
+    if (global_UI_MouseState.LClick) {
+        // global_UI_MouseState.CLOSEBTN_CLICK = true;
         if (
-            (global_UIMouseState.LClick_x >= x) && 
-            (global_UIMouseState.LClick_x <= x+width) &&
-            (global_UIMouseState.LClick_y >= y) &&
-            (global_UIMouseState.LClick_y <= y+height)
+            (global_UI_MouseState.LClick_x >= x) && 
+            (global_UI_MouseState.LClick_x <= x+width) &&
+            (global_UI_MouseState.LClick_y >= y) &&
+            (global_UI_MouseState.LClick_y <= y+height)
         ){
             color = click_color;
-            global_UIMouseState.CLOSEBTN_CLICK = true;
+            global_UI_MouseState.CLOSEBTN_CLICK = true;
         }
     }
 
     u32* pixel =  (
-        (u32*)global_UIBackBuffer.memory + y * global_UIBackBuffer.width + x
+        (u32*)global_UI_BackBuffer.memory + y * global_UI_BackBuffer.width + x
     );
     
     for(i32 y = 0; y < height; y++) {
         for(i32 i = 0; i < width; i++){
             if (
-                (y < global_UIBackBuffer.height - height) 
+                (y < global_UI_BackBuffer.height - height) 
                 || (y > 0))
                 *(pixel+i) = color;
         }
-        if ((y < global_UIBackBuffer.height - height) || (y > 0))
-            pixel += global_UIBackBuffer.width;
+        if ((y < global_UI_BackBuffer.height - height) || (y > 0))
+            pixel += global_UI_BackBuffer.width;
     }
 
     // Draw X:
@@ -379,13 +410,13 @@ void UI_ButtonClose(
 
 bool UIFunc_isCursorOnCloseBtn(){
     if (
-        (global_UIMouseState.LClick_x >= global_UIMouseState.CLOSEBTN_POS_X) 
+        (global_UI_MouseState.LClick_x >= global_UI_MouseState.CLOSEBTN_POS_X) 
         && 
-        (global_UIMouseState.LClick_x <= global_UIMouseState.CLOSEBTN_POS_X + global_UIMouseState.CLOSEBTN_WIDTH) 
+        (global_UI_MouseState.LClick_x <= global_UI_MouseState.CLOSEBTN_POS_X + global_UI_MouseState.CLOSEBTN_WIDTH) 
         &&
-        (global_UIMouseState.LClick_y >= global_UIMouseState.CLOSEBTN_POS_Y) 
+        (global_UI_MouseState.LClick_y >= global_UI_MouseState.CLOSEBTN_POS_Y) 
         &&
-        (global_UIMouseState.LClick_y <= global_UIMouseState.CLOSEBTN_POS_Y + global_UIMouseState.CLOSEBTN_HEIGHT)
+        (global_UI_MouseState.LClick_y <= global_UI_MouseState.CLOSEBTN_POS_Y + global_UI_MouseState.CLOSEBTN_HEIGHT)
     ){
         return true;
     }
@@ -393,27 +424,28 @@ bool UIFunc_isCursorOnCloseBtn(){
 }
 
 
-bool UIFunc_isTabBarClick() {
+// bool UIFunc_isTabBarClick() {
+bool UIFunc_isMouseOver_TopBar() {
     // if (
-    //     (global_UIMouseState.LClick_x >= global_UIMouseState.TABBAR_X) 
+    //     (global_UI_MouseState.LClick_x >= global_UI_MouseState.TABBAR_X) 
     //     && 
-    //     (global_UIMouseState.LClick_x <= global_UIMouseState.TABBAR_X + global_UIMouseState.TABBAR_WIDTH) 
+    //     (global_UI_MouseState.LClick_x <= global_UI_MouseState.TABBAR_X + global_UI_MouseState.TABBAR_WIDTH) 
     //     &&
-    //     (global_UIMouseState.LClick_y >= global_UIMouseState.TABBAR_Y) 
+    //     (global_UI_MouseState.LClick_y >= global_UI_MouseState.TABBAR_Y) 
     //     &&
-    //     (global_UIMouseState.LClick_y <= global_UIMouseState.TABBAR_Y + global_UIMouseState.TABBAR_HEIGHT)
+    //     (global_UI_MouseState.LClick_y <= global_UI_MouseState.TABBAR_Y + global_UI_MouseState.TABBAR_HEIGHT)
     //     && 
-    //     (global_UIMouseState.TABBAR_CLICK)
+    //     (global_UI_MouseState.TABBAR_CLICK)
     // ){
     //     return true;
     // }
 
     if (
-        (global_UIMouseState.LClick_x >= 0) &&
-        (global_UIMouseState.LClick_x <= global_UIBackBuffer.width)
+        (global_UI_MouseState.LClick_x >= 0) &&
+        (global_UI_MouseState.LClick_x <= global_UI_BackBuffer.width)
         && 
-        (global_UIMouseState.LClick_y >= 0) && 
-        (global_UIMouseState.LClick_y <= global_UIMouseState.TABBAR_HEIGHT)
+        (global_UI_MouseState.LClick_y >= 0) && 
+        (global_UI_MouseState.LClick_y <= global_UI_Topbar.height)
     ){
         return true;
     }

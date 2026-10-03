@@ -51,7 +51,7 @@ void win32_create_backbuffer(int width, int height, UI_BackBuffer* gameBackBuffe
         hdc, 
         &win32_globalBitmapinfo, 
         DIB_RGB_COLORS, 
-        (void**)&global_UIBackBuffer.memory, 
+        (void**)&global_UI_BackBuffer.memory, 
         NULL, 
         0
     );
@@ -66,13 +66,13 @@ void win32_RepaintWindow(HWND hwnd){
     StretchDIBits(
         hdc,
         // Destination (x, y, Width, Height)
-        0, 0, global_UIBackBuffer.width, global_UIBackBuffer.height, 
+        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height, 
         
         // Source (x, y, Width, Height)
-        0, 0, global_UIBackBuffer.width, global_UIBackBuffer.height, 
+        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height, 
         
         // Actual Pixe Memory,
-        global_UIBackBuffer.memory,
+        global_UI_BackBuffer.memory,
         // Description of that memory
         &win32_globalBitmapinfo,
         DIB_RGB_COLORS, 
@@ -87,11 +87,11 @@ void win32_DisplayUIBackBuffer(HWND hwnd) {
     StretchDIBits(
         hdc,
         // Destination (x, y, Width, Height)
-        0, 0, global_UIBackBuffer.width, global_UIBackBuffer.height, 
+        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height, 
         // Source (x, y, Width, Height)
-        0, 0, global_UIBackBuffer.width, global_UIBackBuffer.height,
+        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height,
         // Actual Pixel Memory,
-        global_UIBackBuffer.memory,
+        global_UI_BackBuffer.memory,
         // Description of that memory
         &win32_globalBitmapinfo,
         
@@ -146,7 +146,7 @@ void win32_DrawText(
 }
 
 void win32_closeApp(void* handleWindow){
-    global_UIMouseState.CLOSEBTN_CLICK = true;
+    global_UI_MouseState.CLOSEBTN_CLICK = true;
 }
 
 
@@ -171,26 +171,26 @@ void win32_closeApp(void* handleWindow){
 void win32_KeyboardInput(double deltaTime)
 {
     if (GetAsyncKeyState('A') < 0 ) {
-        global_UIKeyboardState.pressed = true;
-        global_UIKeyboardState.key = 'A';
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = 'A';
         OutputDebugStringA("A\n");
         return;
     }  
     if (GetAsyncKeyState('D') < 0) {
-        global_UIKeyboardState.pressed = true;
-        global_UIKeyboardState.key = 'D';
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = 'D';
         OutputDebugStringA("D\n");
         return;
     } 
     if (GetAsyncKeyState('W') < 0) {
-        global_UIKeyboardState.pressed = true;
-        global_UIKeyboardState.key = 'W';
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = 'W';
         OutputDebugStringA("W\n");
         return;
     } 
     
-    global_UIKeyboardState.pressed = false;
-    global_UIKeyboardState.key = '\0';
+    global_UI_KeyboardState.pressed = false;
+    global_UI_KeyboardState.key = '\0';
 }
 
 
@@ -204,10 +204,10 @@ void PLATFORM_IMPL_DrawText(const char* text, int x, int y, int width, int heigh
 // Dragable:
 ///////////////////////////////////
 bool g_tabBarHovered  = false;
-bool g_tabBarPressed  = false;
-bool g_draggingWindow = false;
-POINT g_dragStartMouse;
-POINT g_windowStart;
+// bool g_tabBarPressed  = false;
+// bool g_draggingWindow = false;
+// POINT g_dragStartMouse;
+// POINT g_windowStart;
 ///////////////////////////////////
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -215,33 +215,35 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         // Mouse Click on Button:
         case WM_LBUTTONDOWN: {
-            global_UIMouseState.LClick = true;
-            global_UIMouseState.LClick_x = GET_X_LPARAM(lParam);
-            global_UIMouseState.LClick_y = GET_Y_LPARAM(lParam);
+            global_UI_MouseState.LClick = true;
+            global_UI_MouseState.LClick_x = GET_X_LPARAM(lParam);
+            global_UI_MouseState.LClick_y = GET_Y_LPARAM(lParam);
 
-            // [TABBAR DRAGGABLE]:=>
+            // [TABBAR CLICK(Dragging)]:=>
             if (
-                (global_UIMouseState.LClick_x >= 0) &&
-                (global_UIMouseState.LClick_x <= global_UIBackBuffer.width)
-                && 
-                (global_UIMouseState.LClick_y >= 0) && 
-                (global_UIMouseState.LClick_y <= global_UIMouseState.TABBAR_HEIGHT)
+                UIFunc_isMouseOver_TopBar()
             ){
-            // if (UIFunc_isTabBarClick()) {
-                OutputDebugStringA("Tabbar Clicked");
-                g_tabBarPressed = true;
-                g_draggingWindow = true;
+                // OutputDebugStringA("Tabbar Clicked\n");
+                // g_tabBarPressed = true;
+                // g_draggingWindow = true;
+                global_UI_Topbar.pressed = true;
+                global_UI_Topbar.draggingWindow = true;
 
                 POINT mouse;
                 GetCursorPos(&mouse);
 
-                g_dragStartMouse = mouse;
+                // g_dragStartMouse = mouse;
+                // global_UI_Topbar.mousePoint = mouse;
+                global_UI_Topbar.mousePoint.x = mouse.x;
+                global_UI_Topbar.mousePoint.y = mouse.y;
 
                 RECT windowRect;
                 GetWindowRect(hwnd, &windowRect);
 
-                g_windowStart.x = windowRect.left;
-                g_windowStart.y = windowRect.top;
+                global_UI_Topbar.windowStart.x = windowRect.left;
+                global_UI_Topbar.windowStart.y = windowRect.top;
+                // g_windowStart.x = windowRect.left;
+                // g_windowStart.y = windowRect.top;
 
                 InvalidateRect(hwnd, NULL, FALSE);
 
@@ -252,12 +254,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             // [PASTE HERE]:
             // if (UIFunc_isTabBarClick()) {
             //     OutputDebugStringA("Tabbar Clicked\n");
-            //     global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
-            //     // global_UIMouseState.TABBAR_CLICK = true;
+            //     global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+            //     // global_UI_MouseState.TABBAR_CLICK = true;
             // }
 
-            // if (global_UIMouseState.TABBAR_CLICK) {
-            //     global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+            // if (global_UI_MouseState.TABBAR_CLICK) {
+            //     global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
             // }
 
             
@@ -266,19 +268,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_MOUSEMOVE:
         {
-            if (g_draggingWindow)
+            // if (g_draggingWindow)
+            if (global_UI_Topbar.draggingWindow)
             {
                 POINT mouse;
                 GetCursorPos(&mouse);
             
-                int dx = mouse.x - g_dragStartMouse.x;
-                int dy = mouse.y - g_dragStartMouse.y;
+                // int dx = mouse.x - g_dragStartMouse.x;
+                // int dy = mouse.y - g_dragStartMouse.y;
+                int dx = mouse.x - global_UI_Topbar.mousePoint.x;
+                int dy = mouse.y - global_UI_Topbar.mousePoint.y;
             
                 SetWindowPos(
                     hwnd,
                     NULL,
-                    g_windowStart.x + dx,
-                    g_windowStart.y + dy,
+                    global_UI_Topbar.windowStart.x + dx,
+                    global_UI_Topbar.windowStart.y + dy,
                     0,
                     0,
                     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
@@ -289,15 +294,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
 
         case WM_LBUTTONUP: {
-            global_UIMouseState.LClick = false;
-            global_UIMouseState.LClick_x = -1;
-            global_UIMouseState.LClick_y = -1;
+            global_UI_MouseState.LClick = false;
+            global_UI_MouseState.LClick_x = -1;
+            global_UI_MouseState.LClick_y = -1;
 
             // Tabar:
-            if (g_draggingWindow)
+            if (global_UI_Topbar.draggingWindow)
             {
-                g_draggingWindow = false;
-                g_tabBarPressed = false;
+                // g_draggingWindow = false;
+                // g_tabBarPressed = false;
+                global_UI_Topbar.draggingWindow = false;
+                global_UI_Topbar.pressed = false;
                 
                 ReleaseCapture();
                 
@@ -306,18 +313,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 
             // TabBar Click
-            // if (global_UIMouseState.TABBAR_CLICK) {
-            //     global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
-            //     global_UIMouseState.TABBAR_CLICK = false;
+            // if (global_UI_MouseState.TABBAR_CLICK) {
+            //     global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
+            //     global_UI_MouseState.TABBAR_CLICK = false;
             // }
 
             // Close Button [X]:
-            if (global_UIMouseState.CLOSEBTN_CLICK) {
-                global_UIMouseState.CLOSEBTN_CLICK = false;
+            if (global_UI_MouseState.CLOSEBTN_CLICK) {
+                global_UI_MouseState.CLOSEBTN_CLICK = false;
 
                 // Check: if the cursor is on the Cross Btn of not?
-                global_UIMouseState.LClick_x = GET_X_LPARAM(lParam);
-                global_UIMouseState.LClick_y = GET_Y_LPARAM(lParam);
+                global_UI_MouseState.LClick_x = GET_X_LPARAM(lParam);
+                global_UI_MouseState.LClick_y = GET_Y_LPARAM(lParam);
                 if (UIFunc_isCursorOnCloseBtn())
                     DestroyWindow(hwnd);
             }
@@ -374,22 +381,24 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // }
 
         // UNDO COMMENT:
-        case WM_NCLBUTTONDOWN: {
-            if (global_UIMouseState.TABBAR_CLICK) {
-                global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
-            }
+        // case WM_NCLBUTTONDOWN: {
+        //     if (global_UI_MouseState.TABBAR_CLICK) {
+        //         global_UI_Topbar.color = COLOR_TABBAR_CLICKED;
+        //         // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
+        //     }
             
-            return DefWindowProcA(hwnd, uMsg, wParam, lParam);
-            // return 0;
-        }
+        //     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+        //     // return 0;
+        // }
 
-        case WM_NCLBUTTONUP: {
-            if (global_UIMouseState.TABBAR_CLICK)
-                global_UIMouseState.TABBAR_CLICK = false;
-            global_UIMouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
-            win32_RepaintWindow(hwnd);
-            return DefWindowProcA(hwnd, uMsg, wParam, lParam);
-        }
+        // case WM_NCLBUTTONUP: {
+        //     if (global_UI_MouseState.TABBAR_CLICK)
+        //         global_UI_MouseState.TABBAR_CLICK = false;
+        //     // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
+        //     global_UI_Topbar.color = COLOR_TABBAR_DEFAULT;
+        //     win32_RepaintWindow(hwnd);
+        //     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+        // }
     }
     
     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
@@ -402,7 +411,7 @@ void win32_moveAppOnTabBarClick(void* hwnd){
     
     // #OLD:
     // // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
-    // // global_UIMouseState.TABBAR_CLICK = true;
+    // // global_UI_MouseState.TABBAR_CLICK = true;
     // // What is the use of ReleaseCapture()? Even without it the program is behaving as expected?
     // // ReleaseCapture();
     ///////////////
@@ -439,7 +448,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     int windowPoxY = (screenHeight - windowAreaHeight) / 2;
 
     // BackBuffer Creation (Win32):
-    win32_create_backbuffer(clientAreaWidth, clientAreaHeight, &global_UIBackBuffer);
+    win32_create_backbuffer(clientAreaWidth, clientAreaHeight, &global_UI_BackBuffer);
 
     // Making window Non-Resizable.
     DWORD windowStyle = (
@@ -470,7 +479,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Game Initialization: 
     // "Filling Backbuffer with BG color & RECT color"
     // i32 bgColor = 0x00aaaaaa;
-    // UI_FillBackground(&global_UIBackBuffer, bgColor);
+    // UI_FillBackground(&global_UI_BackBuffer, bgColor);
 
     
     // Win32 Window
