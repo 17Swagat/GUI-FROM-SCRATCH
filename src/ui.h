@@ -85,9 +85,9 @@ void UI_Button(
 );
 void UI_ButtonClose(i32 x, i32 y, i32 width, i32 height);
 void UI_TopBar(
-    void (*closeApp)(void*), 
-    void* handleWindow,
-    void (*tabbarClick)(void*)
+    // void (*closeApp)(void*)
+    // ,void* handleWindow
+    // void (*tabbarClick)(void*)
     // ,i32 height
 );
 
@@ -117,17 +117,7 @@ void UI_ButtonPressed(ButtonPressed* button, double deltaTime);
 
 #ifdef __UI__
 
-// TEMP: Experimenting: Trying to simulate a button press:
-// void ButtonPress(int x, int y, int width, int height){
-// }
-
-// struct ButtonPressed {
-//     i32 x, y;
-//     u32 width, height;
-//     u32 clickColor = COLOR_BUTTON_CLICKED;
-//     bool pressed = false;
-// };
-
+// TODO: "Work on the Button Press Animation"
 void UI_ButtonPressed(
     ButtonPressed* button,
     double deltaTime
@@ -142,23 +132,15 @@ void UI_ButtonPressed(
     int height = button->height;
     i32 color = 0x00555555;
 
-    double buttonScale = 1.0;
-    double shrinkSpeed = 0.0005; // 5.0f
-    // double calc = (speed * deltaTime); 
+    // double buttonScale = 1.0;
+    // double shrinkSpeed = 0.0005; // 5.0f
 
     // Keyboard Click: 
-    // Current 'A'/'D' Trigger
     bool triggerButton = false;
     if (global_UI_KeyboardState.pressed){
         if (global_UI_KeyboardState.key == button->triggerKey) {
             triggerButton = true;
         }
-        // if (
-        //     (global_UI_KeyboardState.key == 'A') ||
-        //     (global_UI_KeyboardState.key == 'D')
-        // ) {
-        //     triggerButton = true;
-        // }
     }
     
     // Detecting Mouse Click:
@@ -240,10 +222,9 @@ void UI_ButtonPressed(
     for(i32 y = 0; y < height; y++) {
         for(i32 i = 0; i < width; i++){
             if (
-                (y < global_UI_BackBuffer.height - height) 
-
+                (y <= global_UI_BackBuffer.height - height) 
                     || 
-                (y > 0)
+                (y >= 0)
             )
                 *(pixel+i) = color;
         }
@@ -251,7 +232,7 @@ void UI_ButtonPressed(
             pixel += global_UI_BackBuffer.width;
     }
 
-    PLATFORM_IMPL_DrawText(&button->triggerKey, x, y, 10, 10);
+    PLATFORM_IMPL_DrawText(&button->triggerKey, x+20, y+20, 10, 10);
 }
 
 void UI_FillBackground(UI_BackBuffer *backbuffer, i32 color){
@@ -261,9 +242,9 @@ void UI_FillBackground(UI_BackBuffer *backbuffer, i32 color){
 }
 
 void UI_TopBar(
-    void (*closeApp)(void*), 
-    void* handleWindow,
-    void (*tabbarClick)(void*)
+    // void (*closeApp)(void*)
+    // void* handleWindow,
+    // void (*tabbarClick)(void*)
     // ,i32 height = 50
 ) {
     i32 width = global_UI_BackBuffer.width;
@@ -288,7 +269,7 @@ void UI_TopBar(
                 // global_UI_MouseState.TABBAR_CLICK = true;
                 // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
                 // color = global_UI_MouseState.TABBAR_COLOR;
-                tabbarClick(handleWindow);
+                // tabbarClick(handleWindow);
            } 
     }  else {
         // global_UI_MouseState.TABBAR_CLICK = false;
@@ -426,20 +407,6 @@ bool UIFunc_isCursorOnCloseBtn(){
 
 // bool UIFunc_isTabBarClick() {
 bool UIFunc_isMouseOver_TopBar() {
-    // if (
-    //     (global_UI_MouseState.LClick_x >= global_UI_MouseState.TABBAR_X) 
-    //     && 
-    //     (global_UI_MouseState.LClick_x <= global_UI_MouseState.TABBAR_X + global_UI_MouseState.TABBAR_WIDTH) 
-    //     &&
-    //     (global_UI_MouseState.LClick_y >= global_UI_MouseState.TABBAR_Y) 
-    //     &&
-    //     (global_UI_MouseState.LClick_y <= global_UI_MouseState.TABBAR_Y + global_UI_MouseState.TABBAR_HEIGHT)
-    //     && 
-    //     (global_UI_MouseState.TABBAR_CLICK)
-    // ){
-    //     return true;
-    // }
-
     if (
         (global_UI_MouseState.LClick_x >= 0) &&
         (global_UI_MouseState.LClick_x <= global_UI_BackBuffer.width - global_UI_MouseState.CLOSEBTN_WIDTH)

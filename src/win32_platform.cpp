@@ -1,5 +1,6 @@
 /*
 [MAJOR TODOS]:
+0. Right now only 1 click is possible. If more than 1 key press, does not take place.
 1. Making the button click smooth with animation 
     - Now better than before.
     - Still Don't know how to have a bouncy animation on press
@@ -101,6 +102,27 @@ void win32_DisplayUIBackBuffer(HWND hwnd) {
     ReleaseDC(hwnd, hdc);
 }
 
+HFONT win32_font;
+void win32_InitText()
+{
+    win32_font = CreateFontA(
+        16,                     // font height
+        0,                      // font width
+        0,                      // angle
+        0,
+        FW_NORMAL,              // weight
+        FALSE,                  // italic
+        FALSE,                  // underline
+        FALSE,                  // strikeout
+        DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS,
+        CLIP_DEFAULT_PRECIS,
+        ANTIALIASED_QUALITY,
+        DEFAULT_PITCH | FF_DONTCARE,
+        "Consolas"
+    );
+}
+
 void win32_DrawText(
     const char* text,
     int x,
@@ -109,9 +131,6 @@ void win32_DrawText(
     int height
 )
 {
-    // CreateCompatibleDC()
-    // SelectObject()
-    // SetBkMode();
     HDC hdc = CreateCompatibleDC(NULL);
 
     HBITMAP oldBitmap = (HBITMAP)SelectObject(
@@ -119,12 +138,17 @@ void win32_DrawText(
         win32_globalBitmap
     );
 
-    // Don't draw a background behind the text.
-    SetBkMode(hdc, RGB(0, 255, 255));
-    // SetBkMode(hdc, TRANSPARENT);
+    HFONT oldFont = (HFONT)SelectObject(
+        hdc,
+        win32_font
+    );
 
-    // Text color
-    SetTextColor(hdc, RGB(255, 255, 255));
+    SetBkMode(hdc, TRANSPARENT);
+
+    SetTextColor(
+        hdc,
+        RGB(255, 255, 255)
+    );
 
     RECT rect = {};
     rect.left   = x;
@@ -137,13 +161,81 @@ void win32_DrawText(
         text,
         -1,
         &rect,
-        DT_CENTER | DT_VCENTER | DT_SINGLELINE
+        DT_CENTER |
+        DT_VCENTER |
+        DT_SINGLELINE
     );
 
+    SelectObject(hdc, oldFont);
     SelectObject(hdc, oldBitmap);
 
     DeleteDC(hdc);
 }
+
+// void win32_DrawText(
+//     const char* text,
+//     int x,
+//     int y,
+//     int width,
+//     int height
+// )
+// {
+
+//     // New:
+//     HFONT font = CreateFontA(
+//         32,                     // height
+//         0,                      // width
+//         0,                      // escapement
+//         0,                      // orientation
+//         FW_NORMAL,              // weight
+//         FALSE,                  // italic
+//         FALSE,                  // underline
+//         FALSE,                  // strikeout
+//         DEFAULT_CHARSET,
+//         OUT_DEFAULT_PRECIS,
+//         CLIP_DEFAULT_PRECIS,
+//         ANTIALIASED_QUALITY,
+//         DEFAULT_PITCH | FF_DONTCARE,
+//         "Consolas"
+//     );
+
+
+//     // Old:
+//     // CreateCompatibleDC()
+//     // SelectObject()
+//     // SetBkMode();
+//     HDC hdc = CreateCompatibleDC(NULL);
+
+//     HBITMAP oldBitmap = (HBITMAP)SelectObject(
+//         hdc,
+//         win32_globalBitmap
+//     );
+
+//     // Don't draw a background behind the text.
+//     // SetBkMode(hdc, RGB(0, 255, 255));
+//     SetBkMode(hdc, TRANSPARENT);
+
+//     // Text color
+//     SetTextColor(hdc, RGB(255, 255, 255));
+
+//     RECT rect = {};
+//     rect.left   = x;
+//     rect.top    = y;
+//     rect.right  = x + width;
+//     rect.bottom = y + height;
+
+//     DrawTextA(
+//         hdc,
+//         text,
+//         -1,
+//         &rect,
+//         DT_CENTER | DT_VCENTER | DT_SINGLELINE
+//     );
+
+//     SelectObject(hdc, oldBitmap);
+
+//     DeleteDC(hdc);
+// }
 
 void win32_closeApp(void* handleWindow){
     global_UI_MouseState.CLOSEBTN_CLICK = true;
@@ -173,21 +265,76 @@ void win32_KeyboardInput(double deltaTime)
     if (GetAsyncKeyState('A') < 0 ) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = 'A';
-        OutputDebugStringA("A\n");
+        // OutputDebugStringA("A\n");
         return;
     }  
     if (GetAsyncKeyState('D') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = 'D';
-        OutputDebugStringA("D\n");
+        // OutputDebugStringA("D\n");
         return;
     } 
     if (GetAsyncKeyState('W') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = 'W';
-        OutputDebugStringA("W\n");
+        // OutputDebugStringA("W\n");
         return;
     } 
+    if (GetAsyncKeyState('0') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '0';
+        return;
+    }
+    if (GetAsyncKeyState('1') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '1';
+        return;
+    }
+    if (GetAsyncKeyState('2') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '2';
+        return;
+    }
+    if (GetAsyncKeyState('3') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '3';
+        return;
+    }
+    if (GetAsyncKeyState('4') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '4';
+        return;
+    }
+    if (GetAsyncKeyState('5') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '5';
+        return;
+    }
+    if (GetAsyncKeyState('6') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '6';
+        return;
+    }
+    if (GetAsyncKeyState('7') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '7';
+        return;
+    }
+    if (GetAsyncKeyState('8') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '8';
+        return;
+    }
+    if (GetAsyncKeyState('9') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '9';
+        return;
+    }
+    if (GetAsyncKeyState('10') < 0) {
+        global_UI_KeyboardState.pressed = true;
+        global_UI_KeyboardState.key = '10';
+        return;
+    }
     
     global_UI_KeyboardState.pressed = false;
     global_UI_KeyboardState.key = '\0';
@@ -211,12 +358,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UI_MouseState.LClick_y = GET_Y_LPARAM(lParam);
 
             // [TABBAR CLICK(Dragging)]:=>
-            if (
-                UIFunc_isMouseOver_TopBar()
-            ){
-                // OutputDebugStringA("Tabbar Clicked\n");
-                // g_tabBarPressed = true;
-                // g_draggingWindow = true;
+            if (UIFunc_isMouseOver_TopBar()) 
+            {
                 global_UI_Topbar.pressed = true;
                 global_UI_Topbar.draggingWindow = true;
 
@@ -240,20 +383,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
                 SetCapture(hwnd);
             }
-
-
-            // [PASTE HERE]:
-            // if (UIFunc_isTabBarClick()) {
-            //     OutputDebugStringA("Tabbar Clicked\n");
-            //     global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
-            //     // global_UI_MouseState.TABBAR_CLICK = true;
-            // }
-
-            // if (global_UI_MouseState.TABBAR_CLICK) {
-            //     global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
-            // }
-
-            
             return 0;
         }
 
@@ -289,25 +418,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UI_MouseState.LClick_x = -1;
             global_UI_MouseState.LClick_y = -1;
 
-            // Tabar:
+            // TopBar:
             if (global_UI_Topbar.draggingWindow)
             {
-                // g_draggingWindow = false;
-                // g_tabBarPressed = false;
                 global_UI_Topbar.draggingWindow = false;
                 global_UI_Topbar.pressed = false;
-                
                 ReleaseCapture();
-                
                 InvalidateRect(hwnd, NULL, FALSE);
             }
-
-
-            // TabBar Click
-            // if (global_UI_MouseState.TABBAR_CLICK) {
-            //     global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
-            //     global_UI_MouseState.TABBAR_CLICK = false;
-            // }
 
             // Close Button [X]:
             if (global_UI_MouseState.CLOSEBTN_CLICK) {
@@ -412,6 +530,9 @@ void win32_moveAppOnTabBarClick(void* hwnd){
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+    // Font Init
+    win32_InitText();
+
     // Register the window class.
     WNDCLASSA wc = {};
     wc.lpfnWndProc = WindowProc;
@@ -533,11 +654,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         // // debugPrint("TimeElapsed: %.3llf ms\n", deltaTime*1000);
         // // debugPrint("FPS: %.3llf\n", (double)perfCountFrequency / deltaTime);
+        double targetFrameTime = 1.0 / 60.0;
+        // if (frameTime < targetFrameTime)
+        if (deltaTime < targetFrameTime)
+        {
+               DWORD sleepMS =
+                   (DWORD)((targetFrameTime - deltaTime) * 1000.0);
+                //    (DWORD)((targetFrameTime - frameTime) * 1000.0);
+
+               Sleep(sleepMS);
+        }
 
         
-        // Update:
-        // win32_keyboardInput(deltaTime, &globalGameBackBuffer);
-
         // [[ Render ]]:
         win32_KeyboardInput(deltaTime);
         UI_LAYOUT(hwnd, deltaTime, win32_moveAppOnTabBarClick);
@@ -546,6 +674,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         // [[ PRESENT ]]:
         win32_DisplayUIBackBuffer(hwnd);
+
+        // Sleep(5);
     }
 
     return 0;
