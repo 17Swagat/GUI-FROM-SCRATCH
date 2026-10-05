@@ -270,8 +270,8 @@ void PLATFORM_IMPL_RenderTextToButton(
     // PLATFORM_Type_TEXTDIM dims = win32_TextDimensions(txt);
 
     // Center inside the button
-    int text_x = btn_x; //btn_x + (btn_w - dims.width)  / 2;
-    int text_y = btn_y; //btn_y + (btn_h - dims.height) / 2;
+    int text_x = btn_x + (btn_w - txt_width)/2;
+    int text_y = btn_y + (btn_h - txt_height)/2;
 
     // Draw (simple & reliable)
     TextOutA(hdc, text_x, text_y, txt, lstrlenA(txt));

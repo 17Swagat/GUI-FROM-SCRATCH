@@ -157,12 +157,12 @@ bool UIFunc_mouseClick(int x, int y, int w, int h) {
 
 void UI_Button(Button* button, const char* text)
 {
-    static_local bool got_text_dims = false;
+    // static_local bool got_text_dims = false;
     PLATFORM_Type_TEXTDIM textdims;
-    if (!got_text_dims) {
-        textdims = PLATFORM_GET_TEXTDIMS(text);
-        got_text_dims = true;
-    }
+    // if (!got_text_dims) {
+    textdims = PLATFORM_GET_TEXTDIMS(text);
+        // got_text_dims = true;
+    // }
 
     // #2 Implementation:
     int x = button->x;
@@ -332,24 +332,6 @@ void UI_ButtonClose(
     // Draw X:
     i32 close_btn_width = width ;
     i32 close_btn_height = height;
-    // PLATFORM_IMPL_DrawText_Letter(
-    //     "X", 
-    //     x + (width/2 - close_btn_width/2),
-    //     y + (height/2 - close_btn_height/2),
-    //     close_btn_width, close_btn_height
-    // );
-    // TODO: NEED TO REPLACE THIS KEYBOARD COMPLEXITY WITH `const char*` in KeyText
-    // KeyText keytext;
-    // keytext.txt[0] = 'X';
-    // keytext.txt[1] = '\0';
-    // keytext.type = tKEY_CHARA;
-    // PLATFORM_IMPL_RenderTextToButton(
-    //     x, //+ (width/2 - close_btn_width/2),
-    //     y,// + (height/2 - close_btn_height/2),// btn_w, btn_h,
-    //     width, height,
-    //     -1,  // WILL REMOVE THIS PARAMETER
-    //     keytext
-    // );
     static_local bool got_x_txt_dims = false;
     static_local PLATFORM_Type_TEXTDIM textdims;
     if (!got_x_txt_dims) {
