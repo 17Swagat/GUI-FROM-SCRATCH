@@ -8,6 +8,14 @@
 #define COLOR_BUTTON_DEFAULT 0x000000ff
 #define COLOR_BUTTON_CLICKED 0x00aa00a0
 
+
+// Win32
+struct PLATFORM_Type_TEXTDIM // TextDimensions
+{
+    long width;
+    long height;
+};
+
 struct UI_BackBuffer{
     i32 width;
     i32 height;
@@ -42,15 +50,8 @@ struct UI_MouseState {
     i32 LClick_x = -1; 
     i32 LClick_y = -1; 
 
-    // TODO: SEPRATE THE TAB SPECIFIC INFORMATION INTO A DIFFERENT STRUCT:
     // TabBar
     bool TABBAR_CLICK = false;
-    // Will Get Filled:
-    // i32 TABBAR_X = 0;
-    // i32 TABBAR_Y = 0;
-    // u32 TABBAR_WIDTH = 0;
-    // u32 TABBAR_HEIGHT = 50; 
-    // u32 TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
 
     // CLOSE [X] Btn:
     bool CLOSEBTN_CLICK = false;
@@ -84,12 +85,7 @@ void UI_Button(
     i32 x, i32 y, i32 width, i32 height, i32 (*func)()
 );
 void UI_ButtonClose(i32 x, i32 y, i32 width, i32 height);
-void UI_TopBar(
-    // void (*closeApp)(void*)
-    // ,void* handleWindow
-    // void (*tabbarClick)(void*)
-    // ,i32 height
-);
+void UI_TopBar();
 
 
 // bool UIFunc_isTabBarClick();
@@ -97,12 +93,9 @@ bool UIFunc_isMouseOver_TopBar();
 bool UIFunc_isCursorOnCloseBtn();
 
 // Will Get Implemented by the Platform Layer:
-void PLATFORM_IMPL_DrawText(const char* text, i32 x, i32 y, i32 width, i32 height);
+// void PLATFORM_IMPL_DrawText_Letter(const char* text, i32 x, i32 y, i32 width, i32 height);
 
 
-/***************************************************** */
-// Implementation:=>
-/***************************************************** */
 struct ButtonPressed {
     i32 x, y;
     // u32 width, height;
@@ -110,35 +103,100 @@ struct ButtonPressed {
     u32 clickColor = COLOR_BUTTON_CLICKED;
     bool pressed = false;
     char triggerKey = '\0';
+    // const char* triggerKey = "\0";
     double scale = 1.0;
 };
 
 void UI_ButtonPressed(ButtonPressed* button, double deltaTime);
 
+
+// ////////////////////////////////////////////////
+// #2
+// ////////////////////////////////////////////////
+// [TEMPORARY DOING FOR TESTING DirectTextA's length parameter (-1), checking it for `const char*`, rather than with `char`]
+enum t_Key { // t_ : type
+    KEY_XX = '\0', // No Key pressed.
+    KEY_0 = '0', KEY_1 = '1', KEY_2 = '2', KEY_3 = '3', KEY_4 = '4', KEY_5 = '5', KEY_6 = '6', KEY_7 = '7', KEY_8 = '8', KEY_9 = '9'
+};
+
+enum t_KeyTextInfo {
+    tKEY_CHARA, // char array
+    tKEY_KEY // Key Type
+};
+
+struct KeyText {
+    union {
+        t_Key key = KEY_XX;
+        char txt[200];
+        // char txt[16];
+    };
+    
+    t_KeyTextInfo type = tKEY_KEY;
+
+    bool operator == (const KeyText& other) const
+    {
+        return (type == other.type && key == other.key);
+    }
+};
+
+struct UI_KeyboardState_2{
+    bool pressed = false;
+    KeyText keytext;
+};
+
+struct ButtonPressed_2 {
+    i32 x; i32 y; i32 width; i32 height;
+    u32 clickColor = COLOR_BUTTON_CLICKED;
+    bool pressed = false;
+    KeyText triggerKey;
+    double scale = 1.0;
+};
+
+UI_KeyboardState_2 global_UI_KeyboardState_2;
+void UI_ButtonPressed_2(ButtonPressed_2* button);
+void PLATFORM_IMPL_DrawText_2(KeyText key, i32 x, i32 y, i32 singleCharSize);
+void PLATFORM_IMPL_RenderTextToButton(
+    i32 btn_x, i32 btn_y, i32 btn_w, i32 btn_h,
+    i32 singleCharSize, KeyText keytext
+);
+
+// #3
+PLATFORM_Type_TEXTDIM PLATFORM_GET_TEXTDIMS(const char* text);
+void UI_ButtonPressed_3(ButtonPressed_2* button, const char* text);
+
+/***************************************************** */
+// Implementation:=>
+/***************************************************** */
 #ifdef __UI__
 
-// TODO: "Work on the Button Press Animation"
-void UI_ButtonPressed(
-    ButtonPressed* button,
-    double deltaTime
-){
-    // static_local int x = button->x;
-    // static_local int y = button->y;
-    // static_local int width = button->width;
-    // static_local int height = button->height;
+// ///////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////
+// #2
+
+// bool keyTextCompare(KeyText keytxt1, KeyText keytxt2){
+//     if ((keytxt1.type.))
+// }
+
+void UI_Button(ButtonPressed_2* button, const char* text)
+{
+    static_local bool got_text_dims = false;
+    PLATFORM_Type_TEXTDIM textdims;
+    if (!got_text_dims) {
+        textdims = PLATFORM_GET_TEXTDIMS(text);
+        got_text_dims = true;
+    }
+
+    // #2 Implementation:
     int x = button->x;
     int y = button->y;
     int width = button->width;
     int height = button->height;
-    i32 color = 0x00555555;
-
-    // double buttonScale = 1.0;
-    // double shrinkSpeed = 0.0005; // 5.0f
+    i32 color = 0x00555555; // Btn-Color
 
     // Keyboard Click: 
     bool triggerButton = false;
     if (global_UI_KeyboardState.pressed){
-        if (global_UI_KeyboardState.key == button->triggerKey) {
+        if (global_UI_KeyboardState_2.keytext == button->triggerKey){
             triggerButton = true;
         }
     }
@@ -153,35 +211,12 @@ void UI_ButtonPressed(
         ){
             button->pressed = true;
             // button->clickColor = COLOR_BUTTON_CLICKED;
-            button->clickColor = color;
-            color = button->clickColor;
         }
+    } else {
+        // button->clickColor = COLOR_BUTTON_DEFAULT;
     }
 
-    // Animate:
-    // if (button->pressed) {
-    //     button->scale -= shrinkSpeed * deltaTime;
-
-    //     if (button->scale < 0.85)
-    //         button->scale = 0.85;
-    // }
-    // else {
-    //     button->scale += shrinkSpeed * deltaTime;
-
-    //     if (button->scale > 1.0)
-    //         button->scale = 1.0;
-    // }
     if (button->pressed || triggerButton) {
-        // button->scale -=  shrinkSpeed * deltaTime;
-        // if (button->scale < 0.85)
-        //     button->scale = 0.85;
-
-        // double rate = 0.9 * deltaTime * 0.0000001;//* (shrinkSpeed * deltaTime);
-        // width -= rate;
-        // height -= rate;
-        // x += rate;
-        // y += rate;
-
         if (width <= button->width * 0.90)
             width = button->width * 0.90;
         if (height <= button->height * 0.90)
@@ -202,19 +237,7 @@ void UI_ButtonPressed(
         y = button->y;
     }
 
-    // Calculate rendered rectangle
-    // width = button->width * button->scale;
-    // height = button->height * button->scale;
-
-    // x = button->x + (button->width - width) / 2;
-    // y = button->y + (button->height - height) / 2;
-
-    // button->x = x;
-    // button->y = y;
-    // button->width = width;
-    // button->height = height;
-
-
+    // Draw:
     u32* pixel =  (
         (u32*)global_UI_BackBuffer.memory + y * global_UI_BackBuffer.width + x
     );
@@ -226,14 +249,194 @@ void UI_ButtonPressed(
                     || 
                 (y >= 0)
             )
-                *(pixel+i) = color;
+                *(pixel+i) = color; //button->clickColor;
         }
         if ((y < global_UI_BackBuffer.height - height) || (y > 0))
             pixel += global_UI_BackBuffer.width;
     }
 
-    PLATFORM_IMPL_DrawText(&button->triggerKey, x+20, y+20, 10, 10);
+    KeyText keytext;
+    // i32 sChar_width = 50;
+    // i32 sChar_height = 50;
+    i32 singleCharSize = 50;
+    keytext = button->triggerKey;
+    i32 btn_x = x, btn_y = y, btn_w = width, btn_h = height;
+    PLATFORM_IMPL_RenderTextToButton(
+        btn_x, btn_y, btn_w, btn_h,
+        singleCharSize, keytext
+    );
 }
+
+
+// void UI_ButtonPressed_2(ButtonPressed_2* button)
+// {
+//     // #2 Implementation:
+//     int x = button->x;
+//     int y = button->y;
+//     int width = button->width;
+//     int height = button->height;
+//     i32 color = 0x00555555;
+
+//     // Keyboard Click: 
+//     bool triggerButton = false;
+//     if (global_UI_KeyboardState.pressed){
+//         if (global_UI_KeyboardState_2.keytext == button->triggerKey){
+//             triggerButton = true;
+//         }
+//     }
+    
+//     // Detecting Mouse Click:
+//     if (global_UI_MouseState.LClick) {
+//         if (
+//             (global_UI_MouseState.LClick_x >= x) && 
+//             (global_UI_MouseState.LClick_x <= x+ width) &&
+//             (global_UI_MouseState.LClick_y >= y) &&
+//             (global_UI_MouseState.LClick_y <= y + height)
+//         ){
+//             button->pressed = true;
+//             // button->clickColor = COLOR_BUTTON_CLICKED;
+//         }
+//     } else {
+//         // button->clickColor = COLOR_BUTTON_DEFAULT;
+//     }
+
+//     if (button->pressed || triggerButton) {
+//         if (width <= button->width * 0.90)
+//             width = button->width * 0.90;
+//         if (height <= button->height * 0.90)
+//             height = button->height * 0.90;
+//         if (x <= button->x + (button->width - width)/2)
+//             x = button->x + (button->width - width)/2;
+//         if (y <= button->y + (button->height - height)/2)
+//             y = button->y + (button->height - height)/2;
+
+//         width = button->width * 0.90;
+//         height = button->height * 0.90;
+//         x = button->x + (button->width - width)/2;
+//         y = button->y + (button->height - height)/2;
+//     } else {
+//         width = button->width;
+//         height = button->height;
+//         x = button->x;
+//         y = button->y;
+//     }
+
+//     // Draw:
+//     u32* pixel =  (
+//         (u32*)global_UI_BackBuffer.memory + y * global_UI_BackBuffer.width + x
+//     );
+    
+//     for(i32 y = 0; y < height; y++) {
+//         for(i32 i = 0; i < width; i++){
+//             if (
+//                 (y <= global_UI_BackBuffer.height - height) 
+//                     || 
+//                 (y >= 0)
+//             )
+//                 *(pixel+i) = color; //button->clickColor;
+//         }
+//         if ((y < global_UI_BackBuffer.height - height) || (y > 0))
+//             pixel += global_UI_BackBuffer.width;
+//     }
+
+//     KeyText keytext;
+//     // i32 sChar_width = 50;
+//     // i32 sChar_height = 50;
+//     i32 singleCharSize = 50;
+//     keytext = button->triggerKey;
+//     i32 btn_x = x, btn_y = y, btn_w = width, btn_h = height;
+//     PLATFORM_IMPL_RenderTextToButton(
+//         btn_x, btn_y, btn_w, btn_h,
+//         singleCharSize, keytext
+//     );
+// }
+
+// ///////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////
+
+// TODO: "Work on the Button Press Animation"
+// void UI_ButtonPressed(
+//     ButtonPressed* button,
+//     double deltaTime
+// ){
+//     int x = button->x;
+//     int y = button->y;
+//     int width = button->width;
+//     int height = button->height;
+//     i32 color = 0x00555555;
+
+//     // double buttonScale = 1.0;
+//     // double shrinkSpeed = 0.0005; // 5.0f
+
+//     // Keyboard Click: 
+//     bool triggerButton = false;
+//     if (global_UI_KeyboardState.pressed){
+//         if (global_UI_KeyboardState.key == button->triggerKey) {
+//             triggerButton = true;
+//         }
+//     }
+    
+//     // Detecting Mouse Click:
+//     if (global_UI_MouseState.LClick) {
+//         if (
+//             (global_UI_MouseState.LClick_x >= x) && 
+//             (global_UI_MouseState.LClick_x <= x+ width) &&
+//             (global_UI_MouseState.LClick_y >= y) &&
+//             (global_UI_MouseState.LClick_y <= y + height)
+//         ){
+//             button->pressed = true;
+//             // button->clickColor = COLOR_BUTTON_CLICKED;
+//             button->clickColor = color;
+//             color = button->clickColor;
+//         }
+//     }
+
+//     if (button->pressed || triggerButton) {
+//         if (width <= button->width * 0.90)
+//             width = button->width * 0.90;
+//         if (height <= button->height * 0.90)
+//             height = button->height * 0.90;
+//         if (x <= button->x + (button->width - width)/2)
+//             x = button->x + (button->width - width)/2;
+//         if (y <= button->y + (button->height - height)/2)
+//             y = button->y + (button->height - height)/2;
+
+//         width = button->width * 0.90;
+//         height = button->height * 0.90;
+//         x = button->x + (button->width - width)/2;
+//         y = button->y + (button->height - height)/2;
+//     } else {
+//         width = button->width;
+//         height = button->height;
+//         x = button->x;
+//         y = button->y;
+//     }
+
+//     u32* pixel =  (
+//         (u32*)global_UI_BackBuffer.memory + y * global_UI_BackBuffer.width + x
+//     );
+    
+//     for(i32 y = 0; y < height; y++) {
+//         for(i32 i = 0; i < width; i++){
+//             if (
+//                 (y <= global_UI_BackBuffer.height - height) 
+//                     || 
+//                 (y >= 0)
+//             )
+//                 *(pixel+i) = color;
+//         }
+//         if ((y < global_UI_BackBuffer.height - height) || (y > 0))
+//             pixel += global_UI_BackBuffer.width;
+//     }
+
+//     const static_local i32 font_size = 10;
+//     PLATFORM_IMPL_DrawText_Letter(
+//         &button->triggerKey, 
+//         x+(width/2)-font_size/2,
+//         y+(height/2)-font_size/2,
+//         font_size, font_size
+//     );
+// }
 
 void UI_FillBackground(UI_BackBuffer *backbuffer, i32 color){
     for(i32 i = 0; i < backbuffer->width * backbuffer->height; i++) {
@@ -241,46 +444,22 @@ void UI_FillBackground(UI_BackBuffer *backbuffer, i32 color){
     }
 }
 
-void UI_TopBar(
-    // void (*closeApp)(void*)
-    // void* handleWindow,
-    // void (*tabbarClick)(void*)
-    // ,i32 height = 50
-) {
+void UI_TopBar() {
     i32 width = global_UI_BackBuffer.width;
     u32* pixel = (u32*)global_UI_BackBuffer.memory;
-    // u32 color = global_UI_MouseState.TABBAR_COLOR;
-    // if (height != 50) {
-    //     global_UI_MouseState.TABBAR_HEIGHT = height;
-    // }
 
     if (global_UI_MouseState.LClick) {
-        //    if (
-        //        (global_UI_MouseState.LClick_x >= 0) && 
-        //        (global_UI_MouseState.LClick_x <= global_UI_BackBuffer.width - 50) && // 50: 
-        //        (global_UI_MouseState.LClick_y >= 0) &&
-        //        (global_UI_MouseState.LClick_y <= global_UI_MouseState.TABBAR_HEIGHT)
-        //    )
         if (UIFunc_isMouseOver_TopBar() && global_UI_Topbar.pressed)
            {
-                // TODO: COLOR CHANGE ON TABBAR CLICK
-                // global_UI_Topbar.pressed = true;
                 global_UI_Topbar.color = COLOR_TABBAR_CLICKED;
-                // global_UI_MouseState.TABBAR_CLICK = true;
-                // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
-                // color = global_UI_MouseState.TABBAR_COLOR;
-                // tabbarClick(handleWindow);
            } 
     }  else {
-        // global_UI_MouseState.TABBAR_CLICK = false;
-        // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
         global_UI_Topbar.color = COLOR_TABBAR_DEFAULT;
     }
 
     for(i32 y = 0; y < global_UI_Topbar.height; y++){
         for (i32 x = 0; x < global_UI_Topbar.width; x++){
             pixel[x] = global_UI_Topbar.color;
-            // pixel[x] = color;
         }
         pixel += width;
     }
@@ -299,43 +478,43 @@ void UI_TopBar(
 }
 
 // Components:
-void UI_Button(
-    i32 x, i32 y, i32 width, i32 height,
-    i32 (*colorOnClick)()
-){
-    i32 color = 0x00aaffff;
-    // Detecting Click
-    if (global_UI_MouseState.LClick) {
-        if (
-            (global_UI_MouseState.LClick_x >= x) && 
-            (global_UI_MouseState.LClick_x <= x+width) &&
-            (global_UI_MouseState.LClick_y >= y) &&
-            (global_UI_MouseState.LClick_y <= y+height)
-        ){
-            if (!colorOnClick)
-                color = 0x00f75d1e;
-            else
-                color = colorOnClick();
-        }
-    }
+// void UI_Button(
+//     i32 x, i32 y, i32 width, i32 height,
+//     i32 (*colorOnClick)()
+// ){
+//     i32 color = 0x00aaffff;
+//     // Detecting Click
+//     if (global_UI_MouseState.LClick) {
+//         if (
+//             (global_UI_MouseState.LClick_x >= x) && 
+//             (global_UI_MouseState.LClick_x <= x+width) &&
+//             (global_UI_MouseState.LClick_y >= y) &&
+//             (global_UI_MouseState.LClick_y <= y+height)
+//         ){
+//             if (!colorOnClick)
+//                 color = 0x00f75d1e;
+//             else
+//                 color = colorOnClick();
+//         }
+//     }
 
-    u32* pixel =  (
-        (u32*)global_UI_BackBuffer.memory + y * global_UI_BackBuffer.width + x
-    );
+//     u32* pixel =  (
+//         (u32*)global_UI_BackBuffer.memory + y * global_UI_BackBuffer.width + x
+//     );
     
-    for(i32 y = 0; y < height; y++) {
-        for(i32 i = 0; i < width; i++){
-            if (
-                // (y < gameBackBuffer->height - globalBox.height) 
-                (y < global_UI_BackBuffer.height - height) 
-                || (y > 0))
-                *(pixel+i) = color;
-        }
-        // if ((y < globalBackBuffer.height - globalBox.height) || (y > 0))
-        if ((y < global_UI_BackBuffer.height - height) || (y > 0))
-            pixel += global_UI_BackBuffer.width;
-    }
-}
+//     for(i32 y = 0; y < height; y++) {
+//         for(i32 i = 0; i < width; i++){
+//             if (
+//                 // (y < gameBackBuffer->height - globalBox.height) 
+//                 (y < global_UI_BackBuffer.height - height) 
+//                 || (y > 0))
+//                 *(pixel+i) = color;
+//         }
+//         // if ((y < globalBackBuffer.height - globalBox.height) || (y > 0))
+//         if ((y < global_UI_BackBuffer.height - height) || (y > 0))
+//             pixel += global_UI_BackBuffer.width;
+//     }
+// }
 
 
 
@@ -377,7 +556,7 @@ void UI_ButtonClose(
     // Draw X:
     i32 close_btn_width = width ;
     i32 close_btn_height = height;
-    PLATFORM_IMPL_DrawText(
+    PLATFORM_IMPL_DrawText_Letter(
         "X", 
         x + (width/2 - close_btn_width/2),
         y + (height/2 - close_btn_height/2),

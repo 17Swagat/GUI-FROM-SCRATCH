@@ -1,7 +1,7 @@
 /*
 [MAJOR TODOS]:
-0. Right now only 1 click is possible. If more than 1 key press, does not take place.
-1. Making the button click smooth with animation 
+0. Multi Key input must be implemented. Right now only 1 key is able to be pressed at one time.
+1. Making the button click smooth with animation
     - Now better than before.
     - Still Don't know how to have a bouncy animation on press
 2. How to put a text and symbols to a block of memory and display it?
@@ -24,6 +24,7 @@
 #include <windows.h>
 #include <windowsx.h> // Resposible for: (GET_X_LPARAM), (GET_Y_LPARAM)
 #include <stdio.h>
+#include <assert.h>
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "gdi32")
@@ -33,7 +34,7 @@ static_global BITMAPINFO win32_globalBitmapinfo;
 static_global HBITMAP win32_globalBitmap;
 
 
-void win32_create_backbuffer(int width, int height, UI_BackBuffer* gameBackBuffer) 
+void win32_create_backbuffer(int width, int height, UI_BackBuffer* gameBackBuffer)
 {
     gameBackBuffer->width = width;
     gameBackBuffer->height = height;
@@ -41,7 +42,7 @@ void win32_create_backbuffer(int width, int height, UI_BackBuffer* gameBackBuffe
 
     // [[ Bitmap Info ]]:=>
     win32_globalBitmapinfo.bmiHeader.biSize = sizeof(win32_globalBitmapinfo.bmiHeader);
-    win32_globalBitmapinfo.bmiHeader.biWidth = width;                                  
+    win32_globalBitmapinfo.bmiHeader.biWidth = width;
     win32_globalBitmapinfo.bmiHeader.biHeight = -height; // -ve = {top-down bitmap}
     win32_globalBitmapinfo.bmiHeader.biPlanes = 1;
     win32_globalBitmapinfo.bmiHeader.biBitCount = 32;
@@ -49,11 +50,11 @@ void win32_create_backbuffer(int width, int height, UI_BackBuffer* gameBackBuffe
 
     HDC hdc = GetDC(NULL);
     win32_globalBitmap = CreateDIBSection(
-        hdc, 
-        &win32_globalBitmapinfo, 
-        DIB_RGB_COLORS, 
-        (void**)&global_UI_BackBuffer.memory, 
-        NULL, 
+        hdc,
+        &win32_globalBitmapinfo,
+        DIB_RGB_COLORS,
+        (void**)&global_UI_BackBuffer.memory,
+        NULL,
         0
     );
 
@@ -67,16 +68,16 @@ void win32_RepaintWindow(HWND hwnd){
     StretchDIBits(
         hdc,
         // Destination (x, y, Width, Height)
-        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height, 
-        
+        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height,
+
         // Source (x, y, Width, Height)
-        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height, 
-        
+        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height,
+
         // Actual Pixe Memory,
         global_UI_BackBuffer.memory,
         // Description of that memory
         &win32_globalBitmapinfo,
-        DIB_RGB_COLORS, 
+        DIB_RGB_COLORS,
         SRCCOPY
     );
     EndPaint(hwnd, &ps);
@@ -88,15 +89,15 @@ void win32_DisplayUIBackBuffer(HWND hwnd) {
     StretchDIBits(
         hdc,
         // Destination (x, y, Width, Height)
-        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height, 
+        0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height,
         // Source (x, y, Width, Height)
         0, 0, global_UI_BackBuffer.width, global_UI_BackBuffer.height,
         // Actual Pixel Memory,
         global_UI_BackBuffer.memory,
         // Description of that memory
         &win32_globalBitmapinfo,
-        
-        DIB_RGB_COLORS, 
+
+        DIB_RGB_COLORS,
         SRCCOPY
     );
     ReleaseDC(hwnd, hdc);
@@ -106,15 +107,15 @@ HFONT win32_font;
 void win32_InitText()
 {
     win32_font = CreateFontA(
-        16,                     // font height
+        0,//20,//20,                     // font height
         0,                      // font width
         0,                      // angle
         0,
-        FW_NORMAL,              // weight
+        FW_BOLD,              // weight
         FALSE,                  // italic
         FALSE,                  // underline
         FALSE,                  // strikeout
-        DEFAULT_CHARSET,
+        ANSI_CHARSET,//DEFAULT_CHARSET,
         OUT_DEFAULT_PRECIS,
         CLIP_DEFAULT_PRECIS,
         ANTIALIASED_QUALITY,
@@ -123,14 +124,8 @@ void win32_InitText()
     );
 }
 
-void win32_DrawText(
-    const char* text,
-    int x,
-    int y,
-    int width,
-    int height
-)
-{
+void PLATFORM_IMPL_DrawText_Letter(const char* text, int x, int y, int width, int height){
+
     HDC hdc = CreateCompatibleDC(NULL);
 
     HBITMAP oldBitmap = (HBITMAP)SelectObject(
@@ -159,7 +154,7 @@ void win32_DrawText(
     DrawTextA(
         hdc,
         text,
-        -1,
+        1,//-1, // Fixed the issue
         &rect,
         DT_CENTER |
         DT_VCENTER |
@@ -172,178 +167,341 @@ void win32_DrawText(
     DeleteDC(hdc);
 }
 
-// void win32_DrawText(
-//     const char* text,
-//     int x,
-//     int y,
-//     int width,
-//     int height
-// )
+// #2
+// /*
+// ******************************************************************************************
+// [[ This won't work in my case, it is not giving the values based on the font I'm using. ]]
+// ******************************************************************************************
+HDC win32_globalHDC = CreateCompatibleDC(NULL);
+void win32_Delete_globalHDC(){
+    DeleteDC(win32_globalHDC);
+}
+
+// PLATFORM_Type_TEXTDIM PLATFORM_GET_TEXTDIMS(HDC hdc, const char* text) {
+PLATFORM_Type_TEXTDIM PLATFORM_GET_TEXTDIMS(const char* text) {
+    SIZE size = {};
+    i32 len = lstrlenA(text);
+    PLATFORM_Type_TEXTDIM textDims;
+    if (GetTextExtentPoint32A(win32_globalHDC, text, len, &size)) {
+        textDims.width = size.cx;
+        textDims.height = size.cy;
+    } else {
+        // FAILED TO GET DIMENSIONS:
+        textDims.width = -1;
+        textDims.height = -1;
+    }
+    return textDims;
+}
+
+PLATFORM_Type_TEXTDIM win32_TextDimensions(const char* text)
+{
+    HDC hdc = win32_globalHDC;
+    // HDC hdc = CreateCompatibleDC(NULL);
+    HBITMAP oldBitmap = (HBITMAP)SelectObject(
+        hdc,
+        win32_globalBitmap
+    );
+    HFONT oldFont = (HFONT)SelectObject(
+        hdc,
+        win32_font
+    );
+    RECT textRect = {};
+    DrawTextA(
+        hdc,
+        text,
+        -1,
+        &textRect,
+        DT_LEFT | DT_SINGLELINE | DT_CALCRECT
+    );
+
+    PLATFORM_Type_TEXTDIM textdims = {
+        .width = textRect.right, 
+        .height = textRect.bottom
+    };
+
+    SelectObject(hdc, oldFont);
+    SelectObject(hdc, oldBitmap);
+
+    // DeleteDC(hdc);
+    return textdims;
+}
+
+void PLATFORM_IMPL_RenderTextToButton(
+    i32 btn_x, i32 btn_y, i32 btn_w, i32 btn_h,
+    i32 singleCharSize, KeyText keytext)
+{
+    HDC hdc = CreateCompatibleDC(NULL);
+    HBITMAP oldBitmap = (HBITMAP)SelectObject(hdc, win32_globalBitmap);
+    HFONT   oldFont   = (HFONT)SelectObject(hdc, win32_font);
+
+    SetBkMode(hdc, OPAQUE); // or OPAQUE if you want background
+    SetTextColor(hdc, RGB(255, 0, 0));
+
+    // Build the string
+    char txt[200];
+    if (keytext.type == tKEY_KEY) {
+        txt[0] = keytext.key;
+        txt[1] = '\0';
+    } else if (keytext.type == tKEY_CHARA) {
+        // safer copy
+        lstrcpynA(txt, keytext.txt, sizeof(txt));
+    } else {
+        assert(!"INVALID KEYTEXT TYPE");
+        txt[0] = '\0';
+    }
+
+    // Measure
+    PLATFORM_Type_TEXTDIM dims = win32_TextDimensions(txt);
+
+    // Center inside the button
+    int text_x = btn_x; //btn_x + (btn_w - dims.width)  / 2;
+    int text_y = btn_y; //btn_y + (btn_h - dims.height) / 2;
+
+    // Draw (simple & reliable)
+    TextOutA(hdc, text_x, text_y, txt, lstrlenA(txt));
+
+    // or if you prefer DrawText:
+    /*
+    RECT r = { text_x, text_y, text_x + dims.width, text_y + dims.height };
+    DrawTextA(hdc, txt, -1, &r, DT_LEFT | DT_SINGLELINE);
+    */
+
+    SelectObject(hdc, oldFont);
+    SelectObject(hdc, oldBitmap);
+    DeleteDC(hdc);
+}
+
+// void PLATFORM_IMPL_RenderTextToButton(
+//     i32 btn_x, i32 btn_y, i32 btn_w, i32 btn_h,
+//     // i32 txt_x, i32 txt_y,
+//     i32 singleCharSize, KeyText keytext)
 // {
+//     // Goal: Put the Text at the Center of the Button:
 
-//     // New:
-//     HFONT font = CreateFontA(
-//         32,                     // height
-//         0,                      // width
-//         0,                      // escapement
-//         0,                      // orientation
-//         FW_NORMAL,              // weight
-//         FALSE,                  // italic
-//         FALSE,                  // underline
-//         FALSE,                  // strikeout
-//         DEFAULT_CHARSET,
-//         OUT_DEFAULT_PRECIS,
-//         CLIP_DEFAULT_PRECIS,
-//         ANTIALIASED_QUALITY,
-//         DEFAULT_PITCH | FF_DONTCARE,
-//         "Consolas"
-//     );
-
-
-//     // Old:
-//     // CreateCompatibleDC()
-//     // SelectObject()
-//     // SetBkMode();
 //     HDC hdc = CreateCompatibleDC(NULL);
-
 //     HBITMAP oldBitmap = (HBITMAP)SelectObject(
 //         hdc,
 //         win32_globalBitmap
 //     );
+//     HFONT oldFont = (HFONT)SelectObject(
+//         hdc,
+//         win32_font
+//     );
+//     SetBkColor(hdc, RGB(0, 0, 255));
+//     SetBkMode(hdc, OPAQUE);
+//     // SetBkMode(hdc, TRANSPARENT);
+//     SetTextColor(
+//         hdc,
+//         RGB(255, 255, 255)
+//     );
+//     RECT textRect = {};
+//     textRect.right = btn_w + 300;//300; // 30, 50, ...
+//     textRect.bottom = btn_y + singleCharSize;
+//     // char txt[16];
+//     char txt[200];
+//     u32 txt_len = 0;
+//     if (keytext.type == tKEY_KEY) {
+//         txt[0] = keytext.key;
+//         txt[1] = '\0';
+//     } else if (keytext.type == tKEY_CHARA){
+//         int i = 0;
+//         for (; keytext.txt[i] != '\0'; i++){
+//             txt[i] = keytext.txt[i];
+//             // textRect.right += //singleCharSize;
+//             // textRect.bottom += singleCharSize;
+//             // txt_len++;
+//         }
+//         txt[i] = '\0';
+//         txt_len = -1; // Testing whether its work or not.
+//     } else {
+//         assert("ERROR: INVALID KEYTEXT TYPE\n");
+//     }
 
-//     // Don't draw a background behind the text.
-//     // SetBkMode(hdc, RGB(0, 255, 255));
-//     SetBkMode(hdc, TRANSPARENT);
+//     textRect.left = btn_x;
+//     textRect.top = btn_y;
 
-//     // Text color
-//     SetTextColor(hdc, RGB(255, 255, 255));
-
-//     RECT rect = {};
-//     rect.left   = x;
-//     rect.top    = y;
-//     rect.right  = x + width;
-//     rect.bottom = y + height;
-
+//     // Get TextRect Size (Width & Height):
+//     /*
+//      * 1. GetTextExtentPoint32A(..) function
+//      * 2. Using DT_CALRECT flag in DrawTextA(..)
+//      */
 //     DrawTextA(
 //         hdc,
-//         text,
+//         txt,
 //         -1,
-//         &rect,
-//         DT_CENTER | DT_VCENTER | DT_SINGLELINE
+//         &textRect,
+//         DT_LEFT | DT_SINGLELINE | DT_CALCRECT
 //     );
 
+//     PLATFORM_Type_TEXTDIM textdims = win32_TextDimensions(hdc, txt);
+
+//     // Render Text:
+//     DrawTextA(
+//         hdc,
+//         txt,
+//         -1,//,txt_len,//-1, // Fixed the issue
+//         &textRect,
+//         DT_LEFT | DT_SINGLELINE 
+//         // DT_CENTER |
+//         // DT_VCENTER |
+//         // DT_SINGLELINE
+//     );
+
+//     SelectObject(hdc, oldFont);
 //     SelectObject(hdc, oldBitmap);
 
 //     DeleteDC(hdc);
 // }
 
-void win32_closeApp(void* handleWindow){
-    global_UI_MouseState.CLOSEBTN_CLICK = true;
+
+void PLATFORM_IMPL_DrawText_2(
+    KeyText key, i32 x, i32 y, i32 singleCharSize
+)
+{
+    HDC hdc = CreateCompatibleDC(NULL);
+
+    HBITMAP oldBitmap = (HBITMAP)SelectObject(
+        hdc,
+        win32_globalBitmap
+    );
+
+    HFONT oldFont = (HFONT)SelectObject(
+        hdc,
+        win32_font
+    );
+
+    SetBkColor(hdc, RGB(0, 0, 255));
+    SetBkMode(hdc, OPAQUE);
+    // SetBkMode(hdc, TRANSPARENT);
+
+    SetTextColor(
+        hdc,
+        RGB(255, 255, 255)
+    );
+
+    RECT rect = {};
+    rect.left   = x;
+    rect.top    = y;
+    rect.right  = x + singleCharSize;
+    rect.bottom = y + singleCharSize;
+
+    char text[16] = "";
+    i32 txt_len = 0;
+    if (key.type == tKEY_KEY) {
+        txt_len = 1;
+        text[0] = (int)'0' + key.key;
+    } else if (key.type == tKEY_CHARA) {
+        int i = 0;
+        // TODO: Experimenting to see whether this parameter in DrawTextA works or not:
+        // txt_len = -1;
+        while (key.txt[i] != '\0') {
+            text[i] = key.txt[i];
+            i++;
+            txt_len++;
+        }
+        text[i] = '\0';
+        rect.right += (txt_len * singleCharSize);
+    }
+
+    // rect.left += 10;
+
+    DrawTextA(
+        hdc,
+        text,
+        txt_len,//-1, // Fixed the issue
+        &rect,
+        DT_LEFT | DT_SINGLELINE
+        // DT_CENTER |
+        // DT_VCENTER |
+        // DT_SINGLELINE
+    );
+
+    SelectObject(hdc, oldFont);
+    SelectObject(hdc, oldBitmap);
+
+    DeleteDC(hdc);
 }
 
-
-// struct KeyState {
-//     bool isDown;
-//     bool released;
-//     bool pressed;
-// };
-
-// KeyState Key_A;
-// KeyState Key_W;
-
-// void win32_updateKey(KeyState* key, i32 vk){
-//     // TODO: Study about GetAsyncKeyState(vk)
-//     bool currentlyDown = (GetAsyncKeyState(vk) & 0x8000) != 0;
-//     key->pressed = currentlyDown && !key->isDown;
-//     key->released = !currentlyDown && key->isDown;
-//     key->isDown = currentlyDown;
-// }
 
 // TODO: WORK on Keyboard Inputs:
 void win32_KeyboardInput(double deltaTime)
 {
+    // static_local bool key_press=false;
+
     if (GetAsyncKeyState('A') < 0 ) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = 'A';
         // OutputDebugStringA("A\n");
         return;
-    }  
+    }
     if (GetAsyncKeyState('D') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = 'D';
         // OutputDebugStringA("D\n");
         return;
-    } 
+    }
     if (GetAsyncKeyState('W') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = 'W';
         // OutputDebugStringA("W\n");
         return;
-    } 
+    }
+
+    // Number Inputs:
     if (GetAsyncKeyState('0') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '0';
-        return;
     }
-    if (GetAsyncKeyState('1') < 0) {
+    else if (GetAsyncKeyState('1') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '1';
-        return;
     }
-    if (GetAsyncKeyState('2') < 0) {
+    else if (GetAsyncKeyState('2') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '2';
-        return;
     }
-    if (GetAsyncKeyState('3') < 0) {
+    else if (GetAsyncKeyState('3') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '3';
-        return;
     }
-    if (GetAsyncKeyState('4') < 0) {
+    else if (GetAsyncKeyState('4') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '4';
-        return;
     }
-    if (GetAsyncKeyState('5') < 0) {
+    else if (GetAsyncKeyState('5') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '5';
-        return;
     }
-    if (GetAsyncKeyState('6') < 0) {
+    else if (GetAsyncKeyState('6') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '6';
-        return;
     }
-    if (GetAsyncKeyState('7') < 0) {
+    else if (GetAsyncKeyState('7') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '7';
-        return;
     }
-    if (GetAsyncKeyState('8') < 0) {
+    else if (GetAsyncKeyState('8') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '8';
-        return;
     }
-    if (GetAsyncKeyState('9') < 0) {
+    else if (GetAsyncKeyState('9') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '9';
-        return;
     }
-    if (GetAsyncKeyState('10') < 0) {
+    else if (GetAsyncKeyState('10') < 0) {
         global_UI_KeyboardState.pressed = true;
         global_UI_KeyboardState.key = '10';
-        return;
     }
-    
-    global_UI_KeyboardState.pressed = false;
-    global_UI_KeyboardState.key = '\0';
+    else {
+        global_UI_KeyboardState.pressed = false;
+        global_UI_KeyboardState.key = '\0';
+    }
 }
 
 
 
-void PLATFORM_IMPL_DrawText(const char* text, int x, int y, int width, int height){
-    win32_DrawText(text, x, y, width, height);
+void win32_closeApp(void* handleWindow){
+    global_UI_MouseState.CLOSEBTN_CLICK = true;
 }
 
 
@@ -358,7 +516,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             global_UI_MouseState.LClick_y = GET_Y_LPARAM(lParam);
 
             // [TABBAR CLICK(Dragging)]:=>
-            if (UIFunc_isMouseOver_TopBar()) 
+            if (UIFunc_isMouseOver_TopBar())
             {
                 global_UI_Topbar.pressed = true;
                 global_UI_Topbar.draggingWindow = true;
@@ -393,12 +551,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 POINT mouse;
                 GetCursorPos(&mouse);
-            
+
                 // int dx = mouse.x - g_dragStartMouse.x;
                 // int dy = mouse.y - g_dragStartMouse.y;
                 int dx = mouse.x - global_UI_Topbar.mousePoint.x;
                 int dy = mouse.y - global_UI_Topbar.mousePoint.y;
-            
+
                 SetWindowPos(
                     hwnd,
                     NULL,
@@ -409,7 +567,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
                 );
             }
-        
+
             return 0;
         }
 
@@ -445,7 +603,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 win32_RepaintWindow(hwnd);
                 return 0;
         }
- 
+
 
         case WM_DESTROY: {
             // TODO: State State Saving:
@@ -471,7 +629,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             // if (wParam == 'A') {
             //     OutputDebugStringA("A is pressed\n");
             // }
-            
+
             // Detect ESC Key Press
             if (wParam == VK_ESCAPE) {
                 #if defined(DEBUG)
@@ -485,7 +643,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         //     // if (wParam == 'A') {
         //     //     OutputDebugStringA("A is released\n");
         //     // }
-            
+
         //     return 0;
         // }
 
@@ -495,7 +653,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         //         global_UI_Topbar.color = COLOR_TABBAR_CLICKED;
         //         // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
         //     }
-            
+
         //     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
         //     // return 0;
         // }
@@ -509,7 +667,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         //     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
         // }
     }
-    
+
     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
 }
 
@@ -517,9 +675,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 void win32_moveAppOnTabBarClick(void* hwnd){
     // #NEW:
     // Will handle window drag myself
-    
+
     // #OLD:
-    // // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info 
+    // // TODO: WILL NEED TO HAVE DS TO Store About TopBar Info
     // // global_UI_MouseState.TABBAR_CLICK = true;
     // // What is the use of ReleaseCapture()? Even without it the program is behaving as expected?
     // // ReleaseCapture();
@@ -544,11 +702,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Drawing Area:
     i32 clientAreaWidth = 1000;
     i32 clientAreaHeight = 800;
-    
+
     RECT rect = {};
     rect.right = clientAreaWidth;
     rect.bottom = clientAreaHeight;
-    
+
     AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
     int windowAreaWidth = rect.right - rect.left;
     int windowAreaHeight = rect.bottom - rect.top;
@@ -564,9 +722,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Making window Non-Resizable.
     DWORD windowStyle = (
-        WS_OVERLAPPED | WS_POPUP 
-        // |  WS_MINIMIZEBOX |  WS_CAPTION | WS_SYSMENU 
-    ); 
+        WS_OVERLAPPED | WS_POPUP
+        // |  WS_MINIMIZEBOX |  WS_CAPTION | WS_SYSMENU
+    );
     HWND hwnd = CreateWindowA(
         wc.lpszClassName, // Window class
         "UI From Scratch",          // Window text
@@ -574,10 +732,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         // Window Position and Size
         // (x, y) coords of the Top-Left Corner of the Window
-        windowPosX, windowPoxY,// CW_USEDEFAULT, CW_USEDEFAULT, 
+        windowPosX, windowPoxY,// CW_USEDEFAULT, CW_USEDEFAULT,
         // (WIDTH, HEIGHT)
-        windowAreaWidth, windowAreaHeight, // CW_USEDEFAULT, CW_USEDEFAULT, 
-        NULL,       // Parent window    
+        windowAreaWidth, windowAreaHeight, // CW_USEDEFAULT, CW_USEDEFAULT,
+        NULL,       // Parent window
         NULL,       // Menu
         hInstance,  // Instance handle
         NULL        // Additional application data
@@ -588,24 +746,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
-    // Game Initialization: 
+    // Game Initialization:
     // "Filling Backbuffer with BG color & RECT color"
     // i32 bgColor = 0x00aaaaaa;
     // UI_FillBackground(&global_UI_BackBuffer, bgColor);
 
-    
+
     // Win32 Window
     ShowWindow(hwnd, nCmdShow);
 
     // Game-Loop:
     bool AppRunning = true;
-    
-    
+
+
     // // For, FPS: (maybe?)
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency); // fixed. (during BOOT)
     i64 perfCountFrequency = frequency.QuadPart; // fixed
-    
+
     LARGE_INTEGER startCounter;
     QueryPerformanceCounter(&startCounter);
 
@@ -613,13 +771,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // i64 StartCPUCycleCount =  __rdtsc(); // the total number of CPU clock cycles that have elapsed since the processor was last reset or powered on
     while (AppRunning) {
         MSG msg = { };
-        
+
         while(PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)){
             if (msg.message == WM_QUIT) {
                 AppRunning = false;
                 break;
             }
-            
+
             TranslateMessage(&msg);
             DispatchMessageA(&msg);
         }
@@ -632,7 +790,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         QueryPerformanceCounter(&endCounter);
 
 
-        // i64 EndCPUCycleCount =  __rdtsc(); 
+        // i64 EndCPUCycleCount =  __rdtsc();
 
         // i64 elapsedCPUCycleCount = EndCPUCycleCount - StartCPUCycleCount;
         // StartCPUCycleCount = EndCPUCycleCount;
@@ -641,17 +799,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         // debugPrint("Start-Counter = %lld\n", startCounter);
         // debugPrint("End-Counter = %lld\nn", endCounter);
 
-        /* 
+        /*
             [QueryPerformanceCounter] diff:   x counts elapsed
             [QueryPerformanceFrequency]: y counts/sec
             [Seconds]:                  (x counts) / (y counts/sec) = (x/y) secs elapsed.
         */
-        
+
         i64 counterElapsed = endCounter.QuadPart - startCounter.QuadPart;
         // deltaTime = [SECONDS ELAPSED between the 2 counters]
         double deltaTime =
-            (double) counterElapsed / (double) perfCountFrequency; 
-        
+            (double) counterElapsed / (double) perfCountFrequency;
+
         // // debugPrint("TimeElapsed: %.3llf ms\n", deltaTime*1000);
         // // debugPrint("FPS: %.3llf\n", (double)perfCountFrequency / deltaTime);
         double targetFrameTime = 1.0 / 60.0;
@@ -665,7 +823,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                Sleep(sleepMS);
         }
 
-        
+
         // [[ Render ]]:
         win32_KeyboardInput(deltaTime);
         UI_LAYOUT(hwnd, deltaTime, win32_moveAppOnTabBarClick);
