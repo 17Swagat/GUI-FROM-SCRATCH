@@ -49,7 +49,15 @@ void UI_LAYOUT(
     static_local const i32 clientArea_y_start = global_UI_Topbar.height + 10;
     static const i32 spaceBetween1 = 5;
 
-
+    // #1
+    Button button = {
+        .x = clientArea_x_start,
+        .y = clientArea_y_start,
+        .width = 100,
+        .height=100,
+        .triggerKey = KEY_1
+    };
+    UI_Button(&button, "XXXXXXXXXXX");
 
 }
 

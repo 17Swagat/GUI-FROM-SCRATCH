@@ -1,3 +1,10 @@
+/* TODO:
+ * FIX:
+ * BUG:
+ * @LATER:
+ * ASK:
+ */
+
 /*
 [MAJOR TODOS]:
 0. Multi Key input must be implemented. Right now only 1 key is able to be pressed at one time.
@@ -193,42 +200,51 @@ PLATFORM_Type_TEXTDIM PLATFORM_GET_TEXTDIMS(const char* text) {
     return textDims;
 }
 
-PLATFORM_Type_TEXTDIM win32_TextDimensions(const char* text)
-{
-    HDC hdc = win32_globalHDC;
-    // HDC hdc = CreateCompatibleDC(NULL);
-    HBITMAP oldBitmap = (HBITMAP)SelectObject(
-        hdc,
-        win32_globalBitmap
-    );
-    HFONT oldFont = (HFONT)SelectObject(
-        hdc,
-        win32_font
-    );
-    RECT textRect = {};
-    DrawTextA(
-        hdc,
-        text,
-        -1,
-        &textRect,
-        DT_LEFT | DT_SINGLELINE | DT_CALCRECT
-    );
+// PLATFORM_Type_TEXTDIM win32_TextDimensions(const char* text)
+// {
+//     HDC hdc = win32_globalHDC;
+//     HBITMAP oldBitmap = (HBITMAP)SelectObject(
+//         hdc,
+//         win32_globalBitmap
+//     );
+//     HFONT oldFont = (HFONT)SelectObject(
+//         hdc,
+//         win32_font
+//     );
+//     RECT textRect = {};
+//     DrawTextA(
+//         hdc,
+//         text,
+//         -1,
+//         &textRect,
+//         DT_LEFT | DT_SINGLELINE | DT_CALCRECT
+//     );
 
-    PLATFORM_Type_TEXTDIM textdims = {
-        .width = textRect.right, 
-        .height = textRect.bottom
-    };
+//     PLATFORM_Type_TEXTDIM textdims = {
+//         .width = textRect.right, 
+//         .height = textRect.bottom
+//     };
 
-    SelectObject(hdc, oldFont);
-    SelectObject(hdc, oldBitmap);
+//     SelectObject(hdc, oldFont);
+//     SelectObject(hdc, oldBitmap);
+//     // NOTE: Handling this in `WM_DESTROY`
+//     // DeleteDC(hdc); 
+//     return textdims;
+// }
 
-    // DeleteDC(hdc);
-    return textdims;
+// TODO: DELETE THIS FUNC:
+void PLATFORM_IMPL_RenderTextToButton(
+    i32 btn_x, i32 btn_y, i32 btn_w, i32 btn_h,
+    i32 singleCharSize, KeyText keytext){
+    // @LATER: DELETE THIS FUNC:
 }
 
 void PLATFORM_IMPL_RenderTextToButton(
+    // i32 btn_x, i32 btn_y, i32 btn_w, i32 btn_h, KeyText keytext
     i32 btn_x, i32 btn_y, i32 btn_w, i32 btn_h,
-    i32 singleCharSize, KeyText keytext)
+    i32 txt_width, i32 txt_height,
+    const char* txt
+)
 {
     HDC hdc = CreateCompatibleDC(NULL);
     HBITMAP oldBitmap = (HBITMAP)SelectObject(hdc, win32_globalBitmap);
@@ -238,20 +254,20 @@ void PLATFORM_IMPL_RenderTextToButton(
     SetTextColor(hdc, RGB(255, 0, 0));
 
     // Build the string
-    char txt[200];
-    if (keytext.type == tKEY_KEY) {
-        txt[0] = keytext.key;
-        txt[1] = '\0';
-    } else if (keytext.type == tKEY_CHARA) {
-        // safer copy
-        lstrcpynA(txt, keytext.txt, sizeof(txt));
-    } else {
-        assert(!"INVALID KEYTEXT TYPE");
-        txt[0] = '\0';
-    }
+    // char txt[200];
+    // if (keytext.type == tKEY_KEY) {
+    //     txt[0] = keytext.key;
+    //     txt[1] = '\0';
+    // } else if (keytext.type == tKEY_CHARA) {
+    //     // safer copy
+    //     lstrcpynA(txt, keytext.txt, sizeof(txt));
+    // } else {
+    //     assert(!"INVALID KEYTEXT TYPE");
+    //     txt[0] = '\0';
+    // }
 
     // Measure
-    PLATFORM_Type_TEXTDIM dims = win32_TextDimensions(txt);
+    // PLATFORM_Type_TEXTDIM dims = win32_TextDimensions(txt);
 
     // Center inside the button
     int text_x = btn_x; //btn_x + (btn_w - dims.width)  / 2;
@@ -266,6 +282,7 @@ void PLATFORM_IMPL_RenderTextToButton(
     DrawTextA(hdc, txt, -1, &r, DT_LEFT | DT_SINGLELINE);
     */
 
+    // ASK: Is SelectObject() necessary in very func call?
     SelectObject(hdc, oldFont);
     SelectObject(hdc, oldBitmap);
     DeleteDC(hdc);
@@ -606,6 +623,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 
         case WM_DESTROY: {
+            // Clearing DCs:
+            DeleteDC(win32_globalHDC);
+
             // TODO: State State Saving:
             PostQuitMessage(0); // What does this function do? It posts a quit message to the message queue, signaling the application to terminate.
             return 0;
@@ -638,34 +658,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
             return 0;
         }
-
-        // case WM_KEYUP: {
-        //     // if (wParam == 'A') {
-        //     //     OutputDebugStringA("A is released\n");
-        //     // }
-
-        //     return 0;
-        // }
-
-        // UNDO COMMENT:
-        // case WM_NCLBUTTONDOWN: {
-        //     if (global_UI_MouseState.TABBAR_CLICK) {
-        //         global_UI_Topbar.color = COLOR_TABBAR_CLICKED;
-        //         // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_CLICKED;
-        //     }
-
-        //     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
-        //     // return 0;
-        // }
-
-        // case WM_NCLBUTTONUP: {
-        //     if (global_UI_MouseState.TABBAR_CLICK)
-        //         global_UI_MouseState.TABBAR_CLICK = false;
-        //     // global_UI_MouseState.TABBAR_COLOR = COLOR_TABBAR_DEFAULT;
-        //     global_UI_Topbar.color = COLOR_TABBAR_DEFAULT;
-        //     win32_RepaintWindow(hwnd);
-        //     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
-        // }
     }
 
     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
