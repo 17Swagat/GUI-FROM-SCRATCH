@@ -18,7 +18,6 @@
 3. [BUG]: Proper color changing on holding the title-bar (dragging it around).
 */
 
-// #define SKB_DEBUG
 #define DEBUG
 #include "skb_debug.h"
 #include "skb_types.h"
@@ -32,7 +31,7 @@
 #include <windows.h>
 #include <windowsx.h> // Resposible for: (GET_X_LPARAM), (GET_Y_LPARAM)
 #include <stdio.h>
-#include <assert.h>
+
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "gdi32")
@@ -42,7 +41,6 @@ static_global BITMAPINFO win32_globalBitmapinfo;
 static_global HBITMAP win32_globalBitmap;
 static_global HDC win32_global_TextDrawHDC = CreateCompatibleDC(NULL);
 static_global HFONT win32_global_fonts[] = {
-    
     CreateFontA(
         30, // font height
         0, // font width
@@ -59,9 +57,8 @@ static_global HFONT win32_global_fonts[] = {
         DEFAULT_PITCH | FF_DONTCARE,
         "Consolas"
     ),
-    
     CreateFontA(
-        25, // font height
+        28, // font height
         0, // font width
         0, // angle
         0,
@@ -77,24 +74,6 @@ static_global HFONT win32_global_fonts[] = {
         "Consolas"
     )
 };
-
-// static_global HFONT win32_global_Font1 = CreateFontA(
-//     30,//30, // font height
-//     0,  // font width
-//     0,  // angle
-//     0,
-//     FW_BOLD,      // weight
-//     FALSE,        // italic
-//     FALSE,        // underline
-//     FALSE,        // strikeout
-//     ANSI_CHARSET, // DEFAULT_CHARSET,
-//     OUT_DEFAULT_PRECIS,
-//     CLIP_DEFAULT_PRECIS,
-//     ANTIALIASED_QUALITY,
-//     DEFAULT_PITCH | FF_DONTCARE,
-//     "Consolas"
-// );
-
 
 void win32_create_backbuffer(int width, int height, UI_BackBuffer *gameBackBuffer)
 {
@@ -213,6 +192,32 @@ void PLATFORM_IMPL_RenderTextToButton(
     SelectObject(hdc, oldBitmap);
     // NOTE: Deleting HDC in `WM_DESTROY` at once. To avoid creation of the HDC through CreateCompatibleDC(NULL) every time this function get's called.
     // DeleteDC(hdc);
+}
+
+void PLATFORM_INPUT_KEYBOARD(){
+    u32 i = 0x01;
+    const u32 max_k = 0xFE;
+
+    while (i <= max_k) {
+        if (GetAsyncKeyState(i) < 0) {
+            // Key Down
+            bool current = true;
+            bool* press = &global_Input_KeyboardState.press[i];
+            // bool* down = &global_Input_KeyboardState.down[i];
+            *press = current && !(*press);
+        }
+        i++;
+    }
+
+    // if (GetAsyncKeyState('A') < 0){
+    //     bool* press = &global_Input_KeyboardState.press['A'];
+    //     bool* down = &global_Input_KeyboardState.down['D'];
+
+    // }
+    // if (GetAsyncKeyState('B') < 0){
+    // }
+    // if (GetAsyncKeyState('C') < 0){
+    // }
 }
 
 // TODO: WORK on Keyboard Inputs:
@@ -588,7 +593,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
 
         // [[ Render ]]:
-        win32_KeyboardInput(deltaTime);
+        // win32_KeyboardInput(deltaTime);
+        PLATFORM_INPUT_KEYBOARD();
         UI_LAYOUT(hwnd, deltaTime);
 
         startCounter = endCounter; // Reset the start counter for the next frame

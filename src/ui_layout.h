@@ -41,16 +41,37 @@ void UI_LAYOUT(void* handleWindow, double deltaTime)
 
     // #1
     // Default States:
-    Button button = {
+    Button btn_1 = {
         .x = clientArea_x_start,
         .y = clientArea_y_start,
         .width = 100,
         .height=100,
-        .triggerKey = KEY_1
+        .hotKey='A'
+        // .triggerKey = KEY_XX
     };
-    // UI_Button(&button, "XXXXXXXXXXX");
-    UI_Button(&button, "XXXX");
+    UI_Button(&btn_1, "XXXX");
 
+    // #2
+    Button btn_2 = {
+        .x = btn_1.x + btn_1.width + spaceBetween1,
+        .y = clientArea_y_start,
+        .width = 228,
+        .height=100,
+        .hotKey='B'
+        // .triggerKey = KEY_XX
+    };
+    UI_Button(&btn_2, "HELLO WORLD!!");
+
+    // #3
+    Button btn_3 = {
+        .x = btn_2.x + btn_2.width + spaceBetween1,
+        .y = clientArea_y_start,
+        .width = 230,
+        .height=100,
+        .hotKey='C'
+        // .triggerKey = KEY_1
+    };
+    UI_Button(&btn_3, "HELLO WORLD!!");
 }
 
 #endif

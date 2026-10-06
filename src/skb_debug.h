@@ -1,29 +1,27 @@
 #pragma once
 
+#include <windows.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <assert.h>
+
+void debugPrint(const char *format, ...);
+
 #ifdef DEBUG
-    
-    #include <windows.h>
-    #include <stdarg.h>
-    #include <stdio.h>
 
-    void debugPrint(const char *format, ...);
+void debugPrint(const char *format, ...){
+    char buffer[1024];
 
-    // #ifdef SKB_DEBUG
+    va_list args;
+    va_start(args, format);
 
-    void debugPrint(const char *format, ...){
-        // #if defined(DEBUG)
-            char buffer[1024];
+    vsnprintf(buffer, sizeof(buffer), format, args);
 
-            va_list args;
-            va_start(args, format);
+    va_end(args);
 
-            vsnprintf(buffer, sizeof(buffer), format, args);
+    OutputDebugStringA(buffer);
+}
 
-            va_end(args);
-
-            OutputDebugStringA(buffer);
-        // #endif
-    }
 
 
 #endif

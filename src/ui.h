@@ -1,6 +1,7 @@
 #pragma once
 
 #include "skb_types.h"
+// #include "assert.h"
 
 // #define COLOR_BG_COLOR 0x00440022
 #define COLOR_BG_COLOR 0xff440022
@@ -62,39 +63,40 @@ struct UI_KeyboardState {
 };
 
 // ME: Better to have way to deal with all the keys through strings (const char*)
-enum t_Key { // t_ : type
-    KEY_XX = '\0', // No Key pressed.
-    KEY_0 = '0', KEY_1 = '1', KEY_2 = '2', KEY_3 = '3', KEY_4 = '4', KEY_5 = '5', KEY_6 = '6', KEY_7 = '7', KEY_8 = '8', KEY_9 = '9'
-};
+// enum t_Key { // t_ : type
+//     KEY_XX = '\0' // No Key pressed.
+//     // ,KEY_0 = '0', KEY_1 = '1', KEY_2 = '2', KEY_3 = '3', KEY_4 = '4', KEY_5 = '5', KEY_6 = '6', KEY_7 = '7', KEY_8 = '8', KEY_9 = '9'
+// };
 
-enum t_KeyTextInfo {
-    tKEY_CHARA, // char array
-    tKEY_KEY // Key Type
-};
+// enum t_KeyTextInfo {
+//     tKEY_CHARA, // char array
+//     tKEY_KEY // Key Type
+// };
 
-struct KeyText {
-    union {
-        t_Key key = KEY_XX;
-        char txt[200];
-        // char txt[16];
-    };
+// struct KeyText {
+//     union {
+//         t_Key key = KEY_XX;
+//         char txt[200];
+//         // char txt[16];
+//     };
 
-    t_KeyTextInfo type = tKEY_KEY;
+//     t_KeyTextInfo type = tKEY_KEY;
 
-    bool operator == (const KeyText& other) const
-    {
-        return (type == other.type && key == other.key);
-    }
-};
+//     bool operator == (const KeyText& other) const
+//     {
+//         return (type == other.type && key == other.key);
+//     }
+// };
 
-struct UI_KeyboardState_2 {
-    bool pressed = false;
-    KeyText keytext;
-};
+// struct UI_KeyboardState_2 {
+//     bool pressed = false;
+//     KeyText keytext;
+// };
 
 struct Button {
     i32 x; i32 y; i32 width = 50; i32 height = 50;
-    KeyText triggerKey;
+    // **Important for Keyboard Input**
+    u32 hotKey; 
     const char* text;
     // Defaults:
     double scale = 1.0;
@@ -109,7 +111,7 @@ UI_BackBuffer global_UI_BackBuffer;
 UI_MouseState global_UI_MouseState;
 UI_KeyboardState global_UI_KeyboardState;
 UI_Topbar global_UI_Topbar;
-UI_KeyboardState_2 global_UI_KeyboardState_2;
+// UI_KeyboardState_2 global_UI_KeyboardState_2;
 
 // Platform:
 // PLATFORM_Type_TEXTDIM PLATFORM_GET_TEXTDIMS(const char* text); // TODO: DELETE THIS 
@@ -132,6 +134,42 @@ bool UIFunc_isCursorOnCloseBtn();
 /***************************************************** */
 // Implementation:=>
 /***************************************************** */
+// TODO: Implement
+/* 
+NOTE:
+Google [Win32 Virtual-Key (VK_) Code Ranges ]:
+LINK: https://share.google/aimode/O8tZWjpkASdFtbhEj
+In the Win32 API, virtual-key codes (**VK_ codes**) are defined as 8-bit values. This means the absolute theoretical range spans from **0x00 to 0xFF** (0 to 255 in decimal). 
+*Note: `0x00` and `0xFF` are officially unassigned/defined as "Undefined" or reserved by the system.*
+
+## Virtual-Key Code Range Breakdown
+| Hex Range | Decimal Range | General Purpose / Key Types |
+| :---            | :---    | :---                        |
+| **0x01 – 0x07** | 1 – 7   | Mouse buttons and special system actions (e.g., Cancel) |
+| **0x08 – 0x2F** | 8 – 47  | Control keys (Backspace, Tab, Enter, Shift, Ctrl, Alt, Pause, Caps Lock, Escape, Space, Page Up/Down, End, Home, Arrow keys) |
+
+| **0x30 – 0x39** | 48 – 57 | Standard **0 through 9** keys (matches ASCII `'0'` through `'9'`) |
+| **0x41 – 0x5A** | 65 – 90 | Standard **A through Z** keys (matches ASCII `'A'` through `'Z'`) |
+
+| **0x5B – 0x6F** | 91 – 111 | Windows keys, Applications key, and **Numpad** keys (0-9, Multiply, Add, Separator, Subtract, Decimal, Divide) |
+| **0x70 – 0x87** | 112 – 135 | Function keys (**F1 through F24**) |
+| **0x90 – 0x96** | 144 – 150 | Lock keys (Num Lock, Scroll Lock) and specific Apple/NEC standard mappings |
+| **0xA0 – 0xB9** | 160 – 185 | Left/Right modifier keys (LSHIFT, RSHIFT, LCONTROL, RCONTROL, etc.) and Browser/Media control keys |
+| **0xBA – 0xC0** | 186 – 192 | Miscellaneous OEM punctuation keys (`;`, `=`, `,`, `-`, `.`, `/`, `` ` ``) *depending on keyboard layout* |
+| **0xDB – 0xDF** | 219 – 223 | Additional OEM bracket/slash keys (`[`, `\`, `]`, `'`) |
+| **0xE1 – 0xFE** | 225 – 254 | OEM-specific or extended keys (e.g., IME keys, `VK_PACKET` for keystroke passing, `VK_OEM_CLEAR`) |
+*/
+
+struct KeyState {
+    // Win32 Keys
+    bool press[255] = {0}; // 0x00 To 0xFF, [Where 0x00 & 0xFF are reserved in Win32]
+    bool down[255] = {0};
+};
+
+KeyState global_Input_KeyboardState;
+
+void PLATFORM_INPUT_KEYBOARD(); // TEMPORARY: PLACE
+
 #ifdef __UI__
 
 // TODO: 
@@ -146,10 +184,27 @@ void UI_Button(Button* button, const char* text)
     int width = button->width;
     int height = button->height;
     u32 color = COLOR_BUTTON_DEFAULT;
+
+    PLATFORM_Type_TEXTDIM textdims;
+    textdims = PLATFORM_GET_TEXTDIMS(text, button->fontIndex);
+    if ((textdims.width) > (width * 0.80)) {
+        // debugPrint("%s %d: \n", __FILE__, __LINE__);
+        // debugPrint("ISSUE: Adviced to Resize the button according to your text\n");
+        while ((textdims.width) > (width * 0.80)) {
+            width += width * 0.25;
+        }
+        button->width = width;
+        // RED color to show this button's (width,height) needs to be reconsiderd:
+        color = 0xffff0000; 
+    }
     
+
     // @LATER: (Improvise) But it works
     // Keyboard Click: 
-    // bool triggerButton = false;
+    bool btn_press_keyboard = false;
+    if(global_Input_KeyboardState.press[button->hotKey]){
+        btn_press_keyboard = true;
+    }
     // if (global_UI_KeyboardState.pressed) {
     //     if (global_UI_KeyboardState_2.keytext == button->triggerKey) {
     //         triggerButton = true;
@@ -161,42 +216,16 @@ void UI_Button(Button* button, const char* text)
         button->pressed = true;
         button->fontIndex = 1;
     } 
-    else {
-        button->fontIndex = 0;
+
+    if (button->pressed || btn_press_keyboard) {
+        width = width * 0.95;
+        height = height * 0.95;
+        x = x + button->width/2 - width/2;
+        y = y + button->height/2 - height/2;
+        // Text Dimension changing:
+        textdims = PLATFORM_GET_TEXTDIMS(text, button->fontIndex);
     }
 
-    if (button->pressed 
-        // || triggerButton
-    ) {
-        if (width <= button->width * 0.90)
-            width = button->width * 0.90;
-        if (height <= button->height * 0.90)
-            height = button->height * 0.90;
-        if (x <= button->x + (button->width - width) / 2)
-            x = button->x + (button->width - width) / 2;
-        if (y <= button->y + (button->height - height) / 2)
-            y = button->y + (button->height - height) / 2;
-
-        width = button->width * 0.90;
-        height = button->height * 0.90;
-        x = button->x + (button->width - width) / 2;
-        y = button->y + (button->height - height) / 2;
-    }
-
-    PLATFORM_Type_TEXTDIM textdims;
-    textdims = PLATFORM_GET_TEXTDIMS(text, button->fontIndex);
-    if (
-        (textdims.width >= (double)button->width * 0.7) ||
-        (textdims.height >= (double)button->height * 0.7)
-    ) {
-        while (button->width * 0.7 <= textdims.width){
-            button->width += (button->width * 0.3);
-        }
-        
-        while (button->height * 0.7 <= textdims.height){
-            button->height += (button->height * 0.3);
-        }
-    }
 
     // Draw:
     u32* pixel = (
@@ -303,7 +332,7 @@ void UI_ButtonClose(i32 x, i32 y, i32 width, i32 height) {
     PLATFORM_IMPL_RenderTextToButton(
         x, y, width, height,
         textdims.width, textdims.height,
-        "X", 0 // 0: Default Font
+        "X", 1 // 0: Default Font
     );
 }
 
