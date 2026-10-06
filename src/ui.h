@@ -6,8 +6,10 @@
 #define COLOR_BG_COLOR 0xff440022
 #define COLOR_TABBAR_DEFAULT 0xff323233
 #define COLOR_TABBAR_CLICKED 0xff543233
-#define COLOR_BUTTON_DEFAULT 0xff0000ff
-#define COLOR_BUTTON_CLICKED 0xffaa00a0
+#define COLOR_BUTTON_DEFAULT 0xff555555
+// #define COLOR_BUTTON_CLICKED 0xffaa00a0
+#define COLOR_CLOSEBTN_DEFAULT 0xffff0000
+#define COLOR_CLOSEBTN_CLICKED 0xffaa0000 
 
 // Win32
 struct PLATFORM_Type_TEXTDIM // TextDimensions
@@ -91,13 +93,15 @@ struct UI_KeyboardState_2 {
 };
 
 struct Button {
-    i32 x; i32 y; i32 width; i32 height;
+    i32 x; i32 y; i32 width = 50; i32 height = 50;
     KeyText triggerKey;
     const char* text;
     // Defaults:
     double scale = 1.0;
-    u32 clickColor = COLOR_BUTTON_CLICKED;
+    // u32 clickColor = COLOR_BUTTON_CLICKED;
     bool pressed = false;
+    // When The button get's pressed we would want to reduce the size of the fonts. Instead of re-creating fonts of the specified size again and again, the win32 platform layer currently stores different fonts (right now same type of fonts, but with differnet sizes). When button gets clicked the smaller font gets used.
+    i32 fontIndex = 0; 
 };
 
 // Globals:
@@ -108,9 +112,11 @@ UI_Topbar global_UI_Topbar;
 UI_KeyboardState_2 global_UI_KeyboardState_2;
 
 // Platform:
-PLATFORM_Type_TEXTDIM PLATFORM_GET_TEXTDIMS(const char* text);
+// PLATFORM_Type_TEXTDIM PLATFORM_GET_TEXTDIMS(const char* text); // TODO: DELETE THIS 
+PLATFORM_Type_TEXTDIM PLATFORM_GET_TEXTDIMS(const char* text, i32 fontIndex);
 void PLATFORM_IMPL_RenderTextToButton(i32 btn_x, i32 btn_y, i32 btn_w, i32 btn_h,
-                                      i32 txt_width, i32 txt_height, const char* txt);
+                                      i32 txt_width, i32 txt_height, const char* txt,
+                                      i32 fontIndex);
 
 // UI:
 void UI_Button(Button* button, const char* text);
@@ -135,34 +141,33 @@ bool UIFunc_isCursorOnCloseBtn();
 
 void UI_Button(Button* button, const char* text)
 {
-    PLATFORM_Type_TEXTDIM textdims;
-    textdims = PLATFORM_GET_TEXTDIMS(text);
-
     int x = button->x;
     int y = button->y;
     int width = button->width;
     int height = button->height;
-    i32 color = 0xff555555; // Btn-Color
-
-    if (textdims.width >= (double)button->width * 0.5) {
-        width *= 2;
-    }
-
-    // @LATER:
+    u32 color = COLOR_BUTTON_DEFAULT;
+    
+    // @LATER: (Improvise) But it works
     // Keyboard Click: 
-    bool triggerButton = false;
-    if (global_UI_KeyboardState.pressed) {
-        if (global_UI_KeyboardState_2.keytext == button->triggerKey) {
-            triggerButton = true;
-        }
-    }
+    // bool triggerButton = false;
+    // if (global_UI_KeyboardState.pressed) {
+    //     if (global_UI_KeyboardState_2.keytext == button->triggerKey) {
+    //         triggerButton = true;
+    //     }
+    // }
 
     // Detecting Mouse Click:
     if (UIFunc_mouseClick(x, y, width, height)) {
         button->pressed = true;
+        button->fontIndex = 1;
+    } 
+    else {
+        button->fontIndex = 0;
     }
 
-    if (button->pressed || triggerButton) {
+    if (button->pressed 
+        // || triggerButton
+    ) {
         if (width <= button->width * 0.90)
             width = button->width * 0.90;
         if (height <= button->height * 0.90)
@@ -177,16 +182,21 @@ void UI_Button(Button* button, const char* text)
         x = button->x + (button->width - width) / 2;
         y = button->y + (button->height - height) / 2;
     }
-    else {
-        width = button->width;
-        height = button->height;
-        x = button->x;
-        y = button->y;
-    }
 
-    // while (textdims.width >= (double)button->width * 0.5){
-    //     width += ((double) width + 0.25* width);
-    // }
+    PLATFORM_Type_TEXTDIM textdims;
+    textdims = PLATFORM_GET_TEXTDIMS(text, button->fontIndex);
+    if (
+        (textdims.width >= (double)button->width * 0.7) ||
+        (textdims.height >= (double)button->height * 0.7)
+    ) {
+        while (button->width * 0.7 <= textdims.width){
+            button->width += (button->width * 0.3);
+        }
+        
+        while (button->height * 0.7 <= textdims.height){
+            button->height += (button->height * 0.3);
+        }
+    }
 
     // Draw:
     u32* pixel = (
@@ -208,23 +218,11 @@ void UI_Button(Button* button, const char* text)
 
     // TODO: Making Fonts smaller on Clicks. Right now having a const Font Size is Ok. Will have to do changes in the Win32 Platform Layer
     // const char* temp_text = "Hello";
-
     PLATFORM_IMPL_RenderTextToButton(
         x, y, width, height,
-        textdims.width, textdims.height, text
+        textdims.width, textdims.height, text,
+        button->fontIndex
     );
-
-
-    // // i32 sChar_width = 50;
-    // // i32 sChar_height = 50;
-    // i32 singleCharSize = 50;
-    // KeyText keytext;
-    // keytext = button->triggerKey;
-    // i32 btn_x = x, btn_y = y, btn_w = width, btn_h = height;
-    // PLATFORM_IMPL_RenderTextToButton(
-    //     btn_x, btn_y, btn_w, btn_h,
-    //     singleCharSize, keytext
-    // );
 }
 
 void UI_FillBackground(UI_BackBuffer* backbuffer, i32 color) {
@@ -269,8 +267,8 @@ void UI_TopBar() {
 
 
 void UI_ButtonClose(i32 x, i32 y, i32 width, i32 height) {
-    i32 color = 0xffff0000;
-    i32 click_color = 0xffaa0000;
+    u32 color = COLOR_CLOSEBTN_DEFAULT;
+    static_local PLATFORM_Type_TEXTDIM textdims = PLATFORM_GET_TEXTDIMS("X", 0);
 
     // Detecting Click:
     if (global_UI_MouseState.LClick) {
@@ -280,9 +278,9 @@ void UI_ButtonClose(i32 x, i32 y, i32 width, i32 height) {
             (global_UI_MouseState.LClick_x <= x + width) &&
             (global_UI_MouseState.LClick_y >= y) &&
             (global_UI_MouseState.LClick_y <= y + height)
-            ) {
-            color = click_color;
+        ) {
             global_UI_MouseState.CLOSEBTN_CLICK = true;
+            color = COLOR_CLOSEBTN_CLICKED;
         }
     }
 
@@ -302,17 +300,10 @@ void UI_ButtonClose(i32 x, i32 y, i32 width, i32 height) {
     }
 
     // Draw X:
-    i32 close_btn_width = width;
-    i32 close_btn_height = height;
-    static_local bool got_x_txt_dims = false;
-    static_local PLATFORM_Type_TEXTDIM textdims;
-    if (!got_x_txt_dims) {
-        got_x_txt_dims = true;
-        textdims = PLATFORM_GET_TEXTDIMS("X");
-    }
     PLATFORM_IMPL_RenderTextToButton(
         x, y, width, height,
-        textdims.width, textdims.height, "X"
+        textdims.width, textdims.height,
+        "X", 0 // 0: Default Font
     );
 }
 

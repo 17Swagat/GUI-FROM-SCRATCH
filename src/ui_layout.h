@@ -5,8 +5,7 @@
 
 void UI_LAYOUT(
     void* handleWindow,
-    double deltaTime,
-    void (*tabbarClick)(void*)
+    double deltaTime
 );
 
 #ifdef __UILAYOUT__
@@ -19,25 +18,16 @@ i32 func_colorChange(){
 static_global bool initStuff = false;
 static_func void init(){
     if (!initStuff) {
-        // global_UI_MouseState.TABBAR_X = 0;
-        // global_UI_MouseState.TABBAR_Y = 0;
-        // global_UI_MouseState.TABBAR_WIDTH = global_UI_BackBuffer.width;
-        // global_UI_MouseState.TABBAR_HEIGHT = 50;
         global_UI_Topbar.x = 0;
         global_UI_Topbar.y = 0;
         global_UI_Topbar.width = global_UI_BackBuffer.width;
         global_UI_Topbar.height = 50;
-        // global_UI_Topbar.pressed = false;
-        // global_UI_Topbar.dragged = false;
         initStuff = true;
     }
 }
 
-void UI_LAYOUT(
-    void* handleWindow,
-    double deltaTime,
-    void (*tabbarClick)(void*)
-){
+void UI_LAYOUT(void* handleWindow, double deltaTime)
+{
     if (!initStuff) {
         init();
     }
@@ -50,6 +40,7 @@ void UI_LAYOUT(
     static const i32 spaceBetween1 = 5;
 
     // #1
+    // Default States:
     Button button = {
         .x = clientArea_x_start,
         .y = clientArea_y_start,
