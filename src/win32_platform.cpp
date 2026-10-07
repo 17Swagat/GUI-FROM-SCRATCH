@@ -194,119 +194,19 @@ void PLATFORM_IMPL_RenderTextToButton(
     // DeleteDC(hdc);
 }
 
+
 void PLATFORM_INPUT_KEYBOARD(){
     u32 i = 0x01;
     const u32 max_k = 0xFE;
 
-    while (i <= max_k) {
-        if (GetAsyncKeyState(i) < 0) {
-            // Key Down
-            bool current = true;
-            bool* press = &global_Input_KeyboardState.press[i];
-            // bool* down = &global_Input_KeyboardState.down[i];
-            *press = current && !(*press);
+    // TODO: IDK,w weather this is a good way or bad way. Just keeping it for now as it seems to be working.
+    for (u32 i = 0x01; i < 0xFE; i++) {
+        if (global_Input_KeyboardState.press[i]) {
+            global_Input_KeyboardState.press[i] = false;
         }
-        i++;
-    }
-
-    // if (GetAsyncKeyState('A') < 0){
-    //     bool* press = &global_Input_KeyboardState.press['A'];
-    //     bool* down = &global_Input_KeyboardState.down['D'];
-
-    // }
-    // if (GetAsyncKeyState('B') < 0){
-    // }
-    // if (GetAsyncKeyState('C') < 0){
-    // }
-}
-
-// TODO: WORK on Keyboard Inputs:
-void win32_KeyboardInput(double deltaTime)
-{
-    // static_local bool key_press=false;
-
-    if (GetAsyncKeyState('A') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = 'A';
-        // OutputDebugStringA("A\n");
-        return;
-    }
-    if (GetAsyncKeyState('D') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = 'D';
-        // OutputDebugStringA("D\n");
-        return;
-    }
-    if (GetAsyncKeyState('W') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = 'W';
-        // OutputDebugStringA("W\n");
-        return;
-    }
-
-    // Number Inputs:
-    if (GetAsyncKeyState('0') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '0';
-    }
-    else if (GetAsyncKeyState('1') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '1';
-    }
-    else if (GetAsyncKeyState('2') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '2';
-    }
-    else if (GetAsyncKeyState('3') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '3';
-    }
-    else if (GetAsyncKeyState('4') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '4';
-    }
-    else if (GetAsyncKeyState('5') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '5';
-    }
-    else if (GetAsyncKeyState('6') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '6';
-    }
-    else if (GetAsyncKeyState('7') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '7';
-    }
-    else if (GetAsyncKeyState('8') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '8';
-    }
-    else if (GetAsyncKeyState('9') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '9';
-    }
-    else if (GetAsyncKeyState('10') < 0)
-    {
-        global_UI_KeyboardState.pressed = true;
-        global_UI_KeyboardState.key = '10';
-    }
-    else
-    {
-        global_UI_KeyboardState.pressed = false;
-        global_UI_KeyboardState.key = '\0';
+        if (GetAsyncKeyState(i) < 0) {
+            global_Input_KeyboardState.press[i] = true;
+        }
     }
 }
 
